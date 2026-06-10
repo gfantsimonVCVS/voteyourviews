@@ -28,13 +28,57 @@
   <style>
     body { font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; max-width: 100vw; }
     html { overflow-x: hidden; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .patriot-pulse {
+      animation: patriotPulse 2.8s ease-in-out infinite;
+      border: 3px solid #3b82f6;
+    }
+    @keyframes patriotPulse {
+      0%   { background: #dc2626; border-color: #3b82f6; box-shadow: 0 0 14px rgba(220,38,38,0.5); }
+      50%  { background: #2563eb; border-color: #dc2626; box-shadow: 0 0 14px rgba(37,99,235,0.5); }
+      100% { background: #dc2626; border-color: #3b82f6; box-shadow: 0 0 14px rgba(220,38,38,0.5); }
+    }
     @media print {
+      /* Hide everything except the ballot */
       .no-print { display: none !important; }
-      body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      * { box-shadow: none !important; animation: none !important; }
-      .print-ballot-item { break-inside: avoid; }
+      header { display: none !important; }
+      nav { display: none !important; }
+
+      /* White background, black text */
+      body, html { background: white !important; color: black !important; }
+      * { box-shadow: none !important; animation: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* Ballot layout */
+      .min-h-screen { min-height: unset !important; }
+      main { padding: 8px !important; max-width: 100% !important; }
+
+      /* Section headers — light color bar, not full dark */
+      [class*="bg-gradient"] { background: #1e293b !important; color: white !important; padding: 6px 10px !important; }
+      [class*="bg-slate-9"] { background: white !important; color: black !important; }
+      [class*="bg-slate-950"] { background: white !important; }
+
+      /* Candidate cards */
+      .grid { gap: 0 !important; }
+      .grid > * { padding: 6px 4px !important; border: 1px solid #e2e8f0 !important; }
+
+      /* Text colors */
+      [class*="text-white"] { color: #111 !important; }
+      [class*="text-slate-4"], [class*="text-slate-5"] { color: #666 !important; }
+      [class*="text-emerald-4"] { color: #059669 !important; }
+      [class*="text-amber-4"] { color: #d97706 !important; }
+      [class*="text-rose-4"] { color: #dc2626 !important; }
+
+      /* Compact photo size for print */
+      .rounded-full { width: 48px !important; height: 48px !important; }
+
+      /* Don't break sections across pages */
+      .rounded-2xl { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8px !important; }
+
+      /* Page setup */
+      @page { margin: 0.5in; size: letter; }
     }
   </style>
 </head>
@@ -61,6 +105,16 @@
     //
     // Leave master empty ('') to use built-in placeholder data.
     // ─────────────────────────────────────────────
+    // ── Shared button styles ──────────────────────────────────────────
+    const BTN = {
+      // Primary filled pill (gradient set inline per-screen)
+      primary: "py-2.5 px-8 rounded-full font-black text-xs uppercase tracking-widest text-white transition-all duration-150 hover:opacity-90 active:scale-[0.97]",
+      // Outlined pill
+      outline: "py-2.5 px-8 rounded-full font-black text-xs uppercase tracking-widest transition-all duration-150 hover:opacity-90 active:scale-[0.97]",
+      // Wrapper: centers & constrains width
+      wrap: "w-72 mx-auto",
+    };
+
     const SHEETS = {
       master: '1V1oaEy6ToV3LZt0et9bIWEJQbPrYZg73tDxGelhiFn8',
       counties: {
@@ -75,6 +129,38 @@
       'reproductiveRights','immigration','gunPolicy','education',
       'healthcare','climate','moneyInPolitics','socialSecurity','affordability'
     ];
+
+    // ─── CHALLENGE ENCODE / DECODE ───
+    // Encodes answers+ranks into a ~18-char URL-safe string
+    // Format: for each of 9 POSITION_KEYS in order → choice (A/B/C/D/X) + rank (1-9, '0'=10, 'X'=unanswered)
+    function encodeChallenge(answers, ranks) {
+      return POSITION_KEYS.map(key => {
+        const choice = answers[key];
+        if (!choice) return 'XX';
+        const rank = ranks[key] || 5;
+        return choice + (rank === 10 ? '0' : String(rank));
+      }).join('');
+    }
+
+    function decodeChallenge(str) {
+      if (!str || str.length !== 18) return null;
+      const answers = {}, ranks = {};
+      POSITION_KEYS.forEach((key, i) => {
+        const choice = str[i * 2];
+        const rankChar = str[i * 2 + 1];
+        if (choice !== 'X') {
+          answers[key] = choice;
+          ranks[key] = rankChar === '0' ? 10 : parseInt(rankChar) || 5;
+        }
+      });
+      return { answers, ranks };
+    }
+
+    function buildChallengeUrl(answers, ranks) {
+      const code = encodeChallenge(answers, ranks);
+      const base = window.location.origin + window.location.pathname;
+      return `${base}?c=${code}`;
+    }
 
     const COUNTY_META = {
       hays:   { name: 'Hays County' },
@@ -167,7 +253,7 @@
     const ISSUES_RAW = [
       {
         id: 'reproductiveRights',
-        symbol: 'Reproductive_Symbol',
+        symbol: 'Reproductive_Symbol_New',
         topic: 'Reproductive Rights',
         emphasis: 'reproductive healthcare',
         question: 'When it comes to reproductive healthcare decisions, I believe:',
@@ -343,7 +429,7 @@
             category: 'federal',
             description: 'The U.S. Senator represents all Texans in Washington for a 6-year term, voting on federal legislation, Supreme Court nominees, and treaties.',
             candidates: [
-              { name: 'James Talarico', party: 'D', photo: 'https://lh3.googleusercontent.com/d/1xT_tzvyzpedvvRDZJ3V09TqjcoTiPiDO', website: null, confirmed: true, summary: 'State Representative turned Senate candidate. Progressive Democrat supporting abortion rights, Medicaid expansion, and public education funding.', positions: POS_D },
+              { name: 'James Talarico', party: 'D', photo: 'https://lh3.googleusercontent.com/d/1xT_tzvyzpedvvRDZJ3V09TqjcoTiPiDO', website: 'https://www.jamestalarico.com', confirmed: true, summary: 'State Representative turned Senate candidate. Progressive Democrat supporting abortion rights, Medicaid expansion, and public education funding.', positions: POS_D },
               { name: 'Ken Paxton', party: 'R', photo: null, website: null, confirmed: true, summary: 'Former AG, acquitted after 2023 impeachment. Running for U.S. Senate — supports border enforcement, opposes abortion rights and gun restrictions.', positions: POS_R }
             ]
           },
@@ -923,6 +1009,161 @@
       );
     }
 
+    // ─── ADDRESS MODAL ───
+    function AddressModal({ county, onContinue, onClose, onShowAll, accentColor, accentColorDark }) {
+      const btnColor = accentColor || '#2563eb';
+      const btnColorDark = accentColorDark || btnColor;
+      const [isSearching, setIsSearching] = useState(false);
+      const [error, setError] = useState(null);
+      const [districts, setDistricts] = useState(null);
+      const inputRef = useRef(null);
+
+      useEffect(() => {
+        const GOOGLE_API_KEY = 'AIzaSyCn_2AoVDh-FUniDp3LAVILut4mr2P8O0o';
+        function initAutocomplete() {
+          if (!inputRef.current || !window.google) return;
+          const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+            types: ['address'],
+            componentRestrictions: { country: 'us' },
+            fields: ['formatted_address']
+          });
+          ac.addListener('place_changed', () => {
+            const place = ac.getPlace();
+            if (place.formatted_address && inputRef.current) {
+              inputRef.current.value = place.formatted_address;
+            }
+          });
+        }
+        if (!window.google) {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places`;
+          script.async = true; script.defer = true;
+          script.onload = initAutocomplete;
+          document.head.appendChild(script);
+        } else { initAutocomplete(); }
+      }, []);
+
+      async function handleSearch() {
+        const addr = inputRef.current?.value?.trim() || '';
+        if (!addr) { setError('Please enter your street address.'); return; }
+        setIsSearching(true); setError(null);
+        try {
+          const GEOCODIO_KEY = '59cc9999fb36698b393c3f1c3861cab815fb35c';
+          const res = await fetch(`https://api.geocod.io/v1.9/geocode?q=${encodeURIComponent(addr)}&fields=cd120,stateleg&api_key=${GEOCODIO_KEY}`);
+          if (!res.ok) throw new Error('Lookup failed');
+          const data = await res.json();
+          const result = data.results && data.results[0];
+          if (!result) { setError('Address not found. Try the full address with city and state.'); setIsSearching(false); return; }
+          const components = result.address_components || {};
+          if (county === 'hays' && components.county && !components.county.toLowerCase().includes('hays')) {
+            setError(`This guide covers Hays County. Your address appears to be in ${components.county}.`);
+            setIsSearching(false); return;
+          }
+          const fields = result.fields || {};
+          const loc = result.location;
+          const cd = fields.congressional_districts && fields.congressional_districts[0];
+          const stateLeg = fields.state_legislative_districts || {};
+          const senate = stateLeg.senate && stateLeg.senate[0];
+          const house = stateLeg.house && stateLeg.house[0];
+          let commPrecinct = null, jpPrecinct = null;
+          try {
+            const [commData, jpData] = await Promise.all([
+              fetch(`https://services5.arcgis.com/bVphnK8rPe5MHUSr/arcgis/rest/services/HaysCountyCommissionerPrecincts/FeatureServer/0/query?geometry=${loc.lng},${loc.lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=CommPrcnt&f=json`).then(r=>r.json()).catch(()=>null),
+              fetch(`https://services5.arcgis.com/bVphnK8rPe5MHUSr/arcgis/rest/services/HaysCoJusticeOfPeace/FeatureServer/0/query?geometry=${loc.lng},${loc.lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=PRECINCT&f=json`).then(r=>r.json()).catch(()=>null)
+            ]);
+            if (commData?.features?.[0]?.attributes?.CommPrcnt != null) commPrecinct = String(commData.features[0].attributes.CommPrcnt);
+            if (jpData?.features?.[0]?.attributes?.PRECINCT != null) jpPrecinct = String(jpData.features[0].attributes.PRECINCT);
+          } catch(e) {}
+          setDistricts({ congressionalDistrict: cd ? String(cd.district_number) : null, stateSenate: senate ? String(senate.district_number) : null, stateHouse: house ? String(house.district_number) : null, commissionerPrecinct: commPrecinct, jpPrecinct: jpPrecinct });
+          setIsSearching(false);
+        } catch(err) { setError('Could not look up your address. Please try again.'); setIsSearching(false); }
+      }
+
+      const DistrictRow = ({ label, value }) => value ? (
+        <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-0">
+          <span className="text-sm text-slate-400">{label}</span>
+          <span className="text-sm font-bold text-white">District {value}</span>
+        </div>
+      ) : null;
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pb-4" onClick={onClose}>
+          <div className="absolute inset-0" style={{background:'rgba(0,0,0,0.92)'}} />
+          <div className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+               style={{background:'linear-gradient(160deg,#1e1b4b,#0f172a)', border:`1.5px solid ${btnColor}66`}}
+               onClick={e => e.stopPropagation()}>
+
+            {/* Yield sign disclaimer banner */}
+            <div className="flex items-start gap-3 px-4 py-3" style={{background:'rgba(251,191,36,0.13)', borderBottom:'1.5px solid rgba(251,191,36,0.35)'}}>
+              <span className="text-2xl leading-none mt-0.5" role="img" aria-label="yield">⚠️</span>
+              <div>
+                <p className="text-amber-300 font-black text-xs uppercase tracking-widest mb-0.5">Beta Version — Hays County Only</p>
+                <p className="text-amber-100 text-xs leading-relaxed">This preview includes candidates for <strong className="text-white">Hays County</strong> only.<br/>More counties coming soon...</p>
+              </div>
+            </div>
+
+            <div className="px-6 pt-5 pb-2 flex items-start justify-between">
+              <div>
+                <h2 className="text-white font-black text-2xl">Find My Candidates</h2>
+                <p className="text-slate-200 text-sm mt-1">Enter your address to see only the<br/>candidates on your ballot.</p>
+              </div>
+              <button onClick={onClose} className="text-slate-300 hover:text-white text-xl leading-none ml-4 mt-0.5 font-black">✕</button>
+            </div>
+
+            <div className="px-6 py-4">
+              {!districts ? (
+                <>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="123 Main St, San Marcos, TX 78666"
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none border mb-3 transition-colors"
+                    style={{background:'rgba(255,255,255,0.10)', borderColor:`${btnColor}88`}}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                  />
+                  {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+                  <div className={BTN.wrap}>
+                    <button onClick={handleSearch} disabled={isSearching}
+                      className={`w-full ${BTN.primary} disabled:opacity-50 mb-2`}
+                      style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.12em'}}>
+                      {isSearching ? 'Looking up your address…' : 'Find My Candidates →'}
+                    </button>
+                  </div>
+                  {onShowAll && (
+                    <button onClick={onShowAll}
+                      className="w-full text-center text-xs text-slate-400 hover:text-white transition-colors mt-3 py-1 uppercase tracking-widest font-bold"
+                      style={{letterSpacing:'0.1em'}}>
+                      Skip — Show All Candidates
+                    </button>
+                  )}
+                  <p className="text-[10px] text-slate-500 text-center mt-3">Your address is only used to look up your districts. We don't store it.</p>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-xl border border-slate-700 px-4 py-1 mb-4" style={{background:'rgba(255,255,255,0.04)'}}>
+                    <DistrictRow label="U.S. House" value={districts.congressionalDistrict} />
+                    <DistrictRow label="TX State Senate" value={districts.stateSenate} />
+                    <DistrictRow label="TX State House" value={districts.stateHouse} />
+                    {districts.commissionerPrecinct && <DistrictRow label="Commissioner" value={districts.commissionerPrecinct} />}
+                    {districts.jpPrecinct && <DistrictRow label="Justice of Peace" value={districts.jpPrecinct} />}
+                  </div>
+                  <button onClick={() => onContinue(districts)}
+                    className="w-full py-3 text-white font-bold rounded-xl text-sm mb-2 transition-colors"
+                    style={{background: btnColor}}>
+                    Show My Ballot →
+                  </button>
+                  <button onClick={() => { setDistricts(null); if(inputRef.current) inputRef.current.value=''; }}
+                    className="w-full py-2 text-slate-500 hover:text-slate-300 text-sm font-medium transition-colors">
+                    Search a different address
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ─── LANDING ───
     function DataSourceBadge({ dataSource, counties }) {
       const totalRaces = Object.values(counties).reduce((sum, c) =>
@@ -992,6 +1233,8 @@
       const available = true;
       const [confirmReset, setConfirmReset] = useState(false);
       const [hoveredIssue, setHoveredIssue] = useState(null);
+      const [showBrowseModal, setShowBrowseModal] = useState(false);
+      const [showBrowseDrop, setShowBrowseDrop] = useState(false);
       const answeredCount = Object.keys(answers).length;
       const issueList = issues.length ? issues : ISSUES;
 
@@ -1029,52 +1272,37 @@
           </div>
 
           {/* Main — two-column on desktop, stacked on mobile */}
-          <main className="relative flex flex-col lg:flex-row items-center justify-center px-4 lg:px-16 xl:px-28 pt-2 pb-8 lg:py-16 gap-6 lg:gap-20 fade-in">
+          <main className="relative flex flex-col lg:flex-row items-center justify-center px-4 lg:px-16 xl:px-28 pt-1 pb-4 lg:py-16 gap-3 lg:gap-20 fade-in">
 
             {/* ── Left col (desktop) / Top (mobile): Headline + description + CTAs ── */}
             <div className="w-full max-w-xs lg:max-w-none lg:w-fit lg:shrink-0 flex flex-col items-center lg:items-start text-center lg:text-left">
-              <h1 className="text-[25px] sm:text-3xl lg:text-[46px] font-black text-white leading-tight lg:leading-snug tracking-tight uppercase lg:whitespace-nowrap">
+              <h1 className="text-[20px] sm:text-2xl lg:text-[46px] font-black text-white leading-tight lg:leading-snug tracking-tight uppercase lg:whitespace-nowrap">
                 Rank Your Beliefs.<br/><span className="text-blue-400">Elect Who Agrees.</span>
               </h1>
-              {/* Mobile steps — single horizontal row */}
-              <div className="lg:hidden flex items-center justify-center gap-x-1.5 mt-4 mb-3 whitespace-nowrap overflow-hidden">
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white font-black text-[9px] shrink-0">1</span>
-                  <span className="text-white font-semibold text-[11px]" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>Choose Your Views</span>
-                </div>
-                <span className="text-slate-600 text-[10px] shrink-0">·</span>
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white font-black text-[9px] shrink-0">2</span>
-                  <span className="text-white font-semibold text-[11px]" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>Visualize</span>
-                </div>
-                <span className="text-slate-600 text-[10px] shrink-0">·</span>
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white font-black text-[9px] shrink-0">3</span>
-                  <span className="text-white font-semibold text-[11px]" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>Build Your Ballot</span>
-                </div>
+              {/* Mobile tagline */}
+              <div className="lg:hidden mt-2 mb-2 text-center">
+                <p className="text-white font-black text-[13px] uppercase leading-tight tracking-wide" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>
+                  <span className="text-red-400">STOP</span> voting parties.<br/><span className="text-blue-400">START</span> voting your views.
+                </p>
               </div>
 
-              <div className="hidden lg:flex flex-col gap-3 mt-10 mb-8">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white font-black text-sm shrink-0">1</span>
-                  <p className="text-white font-bold text-2xl leading-snug" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>Choose Your Views</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white font-black text-sm shrink-0">2</span>
-                  <p className="text-white font-bold text-2xl leading-snug" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>Visualize Your Views</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white font-black text-sm shrink-0">3</span>
-                  <p className="text-white font-bold text-2xl leading-snug" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>Build Your Ballot</p>
-                </div>
+              {/* Desktop tagline */}
+              <div className="hidden lg:block mt-10 mb-8">
+                <p className="text-white font-black text-3xl uppercase leading-tight tracking-wide" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>
+                  <span className="text-red-400">STOP</span> voting parties.<br/><span className="text-blue-400">START</span> voting your views.
+                </p>
               </div>
-              <p className="hidden lg:block text-red-400 font-black text-4xl tracking-widest uppercase mt-1 mb-0">GO VOTE</p>
 
               {/* Desktop CTAs */}
-              <div className="hidden lg:flex flex-col gap-2.5 w-full mt-8">
+              <div className="hidden lg:flex flex-col gap-2.5 mt-8">
+                {answeredCount === 0 && (
+                  <button onClick={() => onQuiz()} className="patriot-pulse w-fit py-2.5 px-8 font-black text-base uppercase tracking-widest rounded-full active:scale-[0.97]" style={{color:'#fff', letterSpacing:'0.12em'}}>
+                    Rank My Views →
+                  </button>
+                )}
                 {answeredCount > 0 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={onSummary} className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors text-sm">
+                    <button onClick={onSummary} className="py-2.5 px-8 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-95 active:scale-[0.97]" style={{background:'#2563eb', letterSpacing:'0.12em'}}>
                       Build My Ballot ({answeredCount}/9) →
                     </button>
                     {confirmReset ? (
@@ -1086,7 +1314,7 @@
                       </div>
                     ) : (
                       <button onClick={() => setConfirmReset(true)} title="Start Over"
-                        className="shrink-0 w-11 h-11 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-500 transition-colors">
+                        className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full border border-slate-500 text-slate-300 hover:text-red-400 hover:border-red-400 transition-colors">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
@@ -1094,13 +1322,36 @@
                     )}
                   </div>
                 )}
-                <button
-                  onClick={onBrowse}
-                  disabled={!available}
-                  className="w-full py-3 border border-slate-700 text-slate-400 font-semibold rounded-xl hover:border-slate-500 hover:text-slate-300 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span className="text-slate-600 font-normal mr-1">or</span> Browse All Candidates
-                </button>
+                <div className={`relative w-fit ${!available ? 'opacity-40 pointer-events-none' : ''}`}>
+                  <div className="flex rounded-full overflow-hidden border border-slate-500">
+                    <button onClick={onBrowse}
+                      className="py-2.5 px-8 font-black text-xs uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150"
+                      style={{letterSpacing:'0.12em'}}>
+                      Choose Candidates
+                    </button>
+                    <button onClick={() => setShowBrowseDrop(d => !d)}
+                      className="px-4 border-l border-slate-500 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center">
+                      <svg className={`w-3.5 h-3.5 transition-transform ${showBrowseDrop ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {showBrowseDrop && (
+                    <div className="absolute top-full mt-1 left-0 right-0 rounded-2xl overflow-hidden shadow-xl z-20 border border-white/10"
+                      style={{background:'#1e293b'}}>
+                      <button onClick={() => { setShowBrowseDrop(false); onBrowse(); }}
+                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                        style={{letterSpacing:'0.1em'}}>
+                        All Candidates
+                      </button>
+                      <button onClick={() => { setShowBrowseDrop(false); setShowBrowseModal(true); }}
+                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
+                        style={{letterSpacing:'0.1em'}}>
+                        My Candidates
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1123,13 +1374,16 @@
                         className="w-full h-full object-cover"
                         onError={e => { e.target.style.display='none'; e.target.parentNode.style.background='#1e293b'; }}
                       />
-                      {answers[issue.id] && answers[issue.id] !== 'D' && (
-                        <div className="absolute top-1 right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
+                      {answers[issue.id] && answers[issue.id] !== 'D' && (() => {
+                        const dotColor = {A:'#3b82f6', B:'#a855f7', C:'#ef4444'}[answers[issue.id]] || '#3b82f6';
+                        return (
+                          <div className="absolute top-1 right-1 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style={{background: dotColor}}>
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        );
+                      })()}
                       {answers[issue.id] === 'D' && (
                         <div className="absolute top-1 right-1 w-7 h-7 bg-slate-400 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -1149,7 +1403,7 @@
               <div className="lg:hidden flex flex-col gap-2.5 mt-2">
                 {answeredCount > 0 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={onSummary} className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors text-sm">
+                    <button onClick={onSummary} className="flex-1 py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97]" style={{background:'#2563eb', letterSpacing:'0.12em'}}>
                       Build My Ballot ({answeredCount}/9) →
                     </button>
                     {confirmReset ? (
@@ -1161,7 +1415,7 @@
                       </div>
                     ) : (
                       <button onClick={() => setConfirmReset(true)} title="Start Over"
-                        className="shrink-0 w-11 h-11 flex items-center justify-center rounded-xl border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-500 transition-colors">
+                        className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full border border-slate-500 text-slate-300 hover:text-red-400 hover:border-red-400 transition-colors">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
@@ -1169,13 +1423,36 @@
                     )}
                   </div>
                 )}
-                <button
-                  onClick={onBrowse}
-                  disabled={!available}
-                  className="w-full py-3 border border-slate-700 text-slate-400 font-semibold rounded-xl hover:border-slate-500 hover:text-slate-300 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span className="text-slate-600 font-normal mr-1">or</span> Browse All Candidates
-                </button>
+                <div className={`relative ${!available ? 'opacity-40 pointer-events-none' : ''}`}>
+                  <div className="flex rounded-full overflow-hidden border border-slate-500">
+                    <button onClick={onBrowse}
+                      className="flex-1 py-2.5 font-bold text-xs uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150"
+                      style={{letterSpacing:'0.12em'}}>
+                      Choose Candidates
+                    </button>
+                    <button onClick={() => setShowBrowseDrop(d => !d)}
+                      className="px-4 border-l border-slate-500 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center">
+                      <svg className={`w-3.5 h-3.5 transition-transform ${showBrowseDrop ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {showBrowseDrop && (
+                    <div className="absolute top-full mt-1 left-0 right-0 rounded-2xl overflow-hidden shadow-xl z-20 border border-white/10"
+                      style={{background:'#1e293b'}}>
+                      <button onClick={() => { setShowBrowseDrop(false); onBrowse(); }}
+                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                        style={{letterSpacing:'0.1em'}}>
+                        All Candidates
+                      </button>
+                      <button onClick={() => { setShowBrowseDrop(false); setShowBrowseModal(true); }}
+                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
+                        style={{letterSpacing:'0.1em'}}>
+                        My Candidates
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1184,7 +1461,7 @@
             const hovered = issueList.find(i => i.id === hoveredIssue);
             return (
               <div
-                className="hidden lg:block absolute inset-0 pointer-events-none z-10"
+                className="hidden absolute inset-0 pointer-events-none z-10"
                 style={{background: 'linear-gradient(to right, rgb(15,23,42) 0%, rgb(15,23,42) 46%, rgba(15,23,42,0.55) 58%, rgba(15,23,42,0) 70%)'}}
               >
                 <div className="h-full flex items-center pl-16 xl:pl-28" style={{paddingRight:'42%'}}>
@@ -1208,6 +1485,16 @@
               VoteYourViews.org · A <a href="https://stateoverparty.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-300">State Over Party</a> Initiative
             </div>
           </footer>
+
+          {showBrowseModal && (
+            <AddressModal
+              county={county || 'hays'}
+              accentColor="#3b82f6"
+              onClose={() => setShowBrowseModal(false)}
+              onContinue={(districts) => { setShowBrowseModal(false); onBrowse(districts); }}
+              onShowAll={() => { setShowBrowseModal(false); onBrowse(); }}
+            />
+          )}
         </div>
       );
     }
@@ -1217,6 +1504,7 @@
       const [selected, setSelected] = useState(initialAnswer);
       const [expanded, setExpanded] = useState(initialAnswer);
       const [rank, setRank] = useState(initialRank);
+      const [browsingViews, setBrowsingViews] = useState(false);
       const [showInfo, setShowInfo] = useState(false);
       const [contextExpanded, setContextExpanded] = useState(false);
 
@@ -1236,8 +1524,9 @@
           onSave('D', 3);
           return;
         }
+        setBrowsingViews(false);
         setSelected(choice);
-        if (!rank) setRank(5);
+        // Don't auto-set rank — user must choose it explicitly
       }
 
       function handleSave() {
@@ -1247,180 +1536,193 @@
 
       if (!issue) return null;
 
+      const VIEW_COLOR_HEX = { A: '#3b82f6', B: '#a855f7', C: '#ef4444', D: '#64748b' };
+      const VIEW_COLOR_DARK = { A: '#1d4ed8', B: '#7e22ce', C: '#991b1b', D: '#334155' };
+      const selColor = VIEW_COLOR_HEX[selected] || '#64748b';
+      const selColorDark = VIEW_COLOR_DARK[selected] || '#334155';
+
       return (
-        <div className="min-h-screen flex flex-col bg-slate-50">
+        <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(160deg,#1e1b4b 0%,#0f172a 60%,#0c1a2e 100%)'}}>
           {/* Top nav */}
-          <div className="bg-white border-b border-slate-200 px-4 py-3">
-            <div className="max-w-2xl mx-auto flex items-center justify-between">
-              <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1">
+          <div className="border-b border-white/10 px-4 py-3 lg:py-4">
+            <div className="max-w-7xl mx-auto px-4 lg:px-16 flex items-center justify-between">
+              <button onClick={onBack} className="text-sm lg:text-base text-white font-black flex items-center gap-1 transition-colors hover:opacity-80 uppercase tracking-widest" style={{letterSpacing:'0.08em'}}>
                 ← Back
               </button>
-              <div className="text-sm font-semibold text-slate-600">{issue.topic}</div>
-              <button onClick={onStartOver} className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors">
+              <div className="text-sm lg:text-base font-black text-white uppercase tracking-widest">{issue.topic}</div>
+              <button onClick={onStartOver} className="text-xs lg:text-sm text-slate-300 hover:text-red-400 font-black uppercase tracking-widest transition-colors" style={{letterSpacing:'0.08em'}}>
                 Start Over
               </button>
             </div>
           </div>
 
-          {/* Question */}
-          <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 sm:py-12 fade-in">
-            <div className="max-w-2xl w-full">
-              {/* Topic Context Card — expandable inline */}
-              <div className="w-full rounded-2xl mb-5 bg-white border border-slate-200 shadow-sm overflow-hidden">
-                {/* Top row: symbol + topic label */}
-                <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center overflow-hidden">
+          {/* Content */}
+          <div className="flex-1 flex flex-col lg:flex-row lg:items-start max-w-7xl mx-auto w-full px-4 lg:px-16 py-6 lg:py-10 gap-6 lg:gap-20 fade-in">
+
+            {/* ── LEFT: Context card ── */}
+            <div className="lg:w-1/2 flex flex-col">
+              <div className="w-full rounded-2xl overflow-hidden flex flex-col" style={{background:'linear-gradient(160deg,rgba(99,102,241,0.18),rgba(255,255,255,0.07))', border:'1px solid rgba(255,255,255,0.28)', boxShadow:'0 0 40px rgba(99,102,241,0.12)'}}>
+                <div className="flex items-center gap-4 lg:gap-6 px-5 lg:px-8 pt-5 lg:pt-8 pb-3 lg:pb-5">
+                  <div className="shrink-0 w-14 h-14 lg:w-28 lg:h-28 rounded-2xl flex items-center justify-center overflow-hidden" style={{background:'rgba(255,255,255,0.10)', border:'1px solid rgba(255,255,255,0.15)'}}>
                     <img
                       src={`./icons/symbols/${issue.symbol}.png`}
                       alt={issue.topic}
-                      className="w-11 h-11 object-contain"
+                      style={{width:'80%', height:'80%', objectFit:'contain'}}
                       onError={e => { e.target.style.display = 'none'; }}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em]">Texas Context</p>
-                    <p className="text-slate-900 font-black text-sm uppercase tracking-wide leading-tight">{issue.topic}</p>
+                    <p className="text-[10px] lg:text-sm font-black text-indigo-300 uppercase tracking-[0.22em] mb-1">VoteYourViews</p>
+                    <p className="text-white font-black text-base lg:text-2xl uppercase tracking-wide leading-tight">{issue.topic}</p>
                   </div>
                 </div>
-                {/* Description — collapsed or expanded */}
                 {(issue.hoverDesc || issue.fact) && (
-                  <div className="px-4 pb-4">
-                    <p className={`text-slate-600 text-[13px] leading-relaxed transition-all ${contextExpanded ? '' : 'line-clamp-2'}`}>
+                  <div className="px-5 lg:px-8 pb-5 lg:pb-6 flex-1">
+                    <p className={`text-slate-100 text-[15px] lg:text-[22px] leading-relaxed transition-all ${contextExpanded ? '' : 'lg:line-clamp-none line-clamp-3'}`}>
                       {issue.hoverDesc || issue.fact}
                     </p>
                     <button
                       onClick={() => setContextExpanded(x => !x)}
-                      className="mt-2 text-blue-600 hover:text-blue-800 text-[12px] font-bold tracking-wide transition-colors">
+                      className="lg:hidden mt-2 text-blue-400 hover:text-blue-300 text-[12px] font-bold tracking-wide transition-colors">
                       {contextExpanded ? 'Show less ↑' : 'Read the full context ↓'}
                     </button>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Headline below card */}
-              <h2 className="text-lg font-bold text-slate-900 leading-snug mb-4">
-                For <span className="font-black text-amber-500 break-words">{(issue.emphasis || issue.topic).toUpperCase()}</span>,<br className="sm:hidden" /> I believe<span className="text-slate-400">...</span>
+            {/* ── RIGHT: View choices ── */}
+            <div className="lg:w-1/2 flex flex-col">
+              <h2 className="text-xl lg:text-4xl font-bold text-white leading-snug mb-3 lg:mb-4">
+                For <span className="font-black break-words" style={{color: '#f59e0b'}}>{issue.topic.toUpperCase()}</span><span className="text-white">, <span className="italic font-black whitespace-nowrap">I believe...</span></span>
               </h2>
-
-              {/* Info overlay */}
-              {showInfo && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={() => setShowInfo(false)}>
-                  <div className="absolute inset-0 bg-black/40" />
-                  <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg mx-0 sm:mx-4 px-6 pt-6 pb-8 shadow-2xl" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0">
-                          <img src={`./icons/${issue.icon || issue.id}.png`} alt={issue.topic} className="w-full h-full object-cover" />
-                        </div>
-                        <p className="font-black text-slate-900 text-base">{issue.topic}</p>
-                      </div>
-                      <button onClick={() => setShowInfo(false)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="w-10 h-1 bg-blue-500 rounded-full mb-4" />
-                    <p className="text-slate-600 text-[15px] leading-relaxed">{issue.hoverDesc || issue.fact}</p>
-                  </div>
-                </div>
-              )}
 
               {(() => {
                 const views = [
-                  { choice: 'A', viewLabel: 'Liberal View',      headerBg: 'bg-blue-600',   border: 'border-blue-500',   borderLight: 'border-blue-300',   labelColor: 'text-blue-600',   bodyBg: 'bg-blue-50',   bodyText: 'text-blue-800'   },
-                  { choice: 'B', viewLabel: 'Moderate View',     headerBg: 'bg-purple-600', border: 'border-purple-500', borderLight: 'border-purple-300', labelColor: 'text-purple-600', bodyBg: 'bg-purple-50', bodyText: 'text-purple-800' },
-                  { choice: 'C', viewLabel: 'Conservative View', headerBg: 'bg-red-600',    border: 'border-red-500',    borderLight: 'border-red-300',    labelColor: 'text-red-600',   bodyBg: 'bg-red-50',    bodyText: 'text-red-800'    },
+                  { choice: 'A', viewLabel: 'Liberal View',      color: '#3b82f6', colorDark: '#1d4ed8' },
+                  { choice: 'B', viewLabel: 'Moderate View',     color: '#a855f7', colorDark: '#7e22ce' },
+                  { choice: 'C', viewLabel: 'Conservative View', color: '#ef4444', colorDark: '#991b1b' },
                 ];
-                if (selected) {
+                if (selected && !browsingViews) {
                   const v = views.find(v => v.choice === selected);
                   return (
-                    <div className="mb-4">
+                    <div className="w-full">
                       {selected === 'D' ? (
-                        <div className="rounded-xl border-2 border-slate-300 bg-slate-50 px-4 py-4">
-                          <p className="text-sm font-semibold text-slate-600">✓ No Opinion on this issue</p>
+                        <div className="rounded-2xl px-5 py-4" style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)'}}>
+                          <p className="text-sm font-bold text-slate-300">✓ No Opinion on this issue</p>
                         </div>
                       ) : (
-                        <div className={`rounded-xl border-2 overflow-hidden transition-opacity duration-300 opacity-40 ${v.border}`}>
-                          <div className={`${v.headerBg} text-white px-4 py-3 flex items-center gap-2`}>
-                            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="rounded-2xl overflow-hidden transition-all duration-500" style={{border:`2px solid ${rank ? v.color : v.color+'55'}`, boxShadow: rank ? `0 0 24px ${v.color}44` : 'none', opacity: rank ? 1 : 0.6}}>
+                          <div className="px-5 py-3 lg:py-4 flex items-center gap-2" style={{background:`linear-gradient(90deg,${v.colorDark},${v.color})`}}>
+                            <svg className="w-4 h-4 shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
-                            <span className="font-bold text-sm">{v.viewLabel}</span>
+                            <span className="font-black text-white text-sm lg:text-xl uppercase tracking-widest flex-1">{v.viewLabel}</span>
+                            <button onClick={() => { setBrowsingViews(true); setExpanded(selected); }}
+                              className="text-white/80 hover:text-white text-xs lg:text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all hover:bg-white/10"
+                              style={{border:'1.5px solid rgba(255,255,255,0.5)', letterSpacing:'0.1em'}}>
+                              ← Change
+                            </button>
                           </div>
-                          <div className={`px-4 py-3 ${v.bodyBg}`}>
-                            <p className={`text-sm leading-relaxed font-medium ${v.bodyText}`}>{issue[selected]}</p>
+                          <div className="px-5 lg:px-7 py-4 lg:py-6" style={{background:`linear-gradient(160deg,${v.color}22,${v.color}0a)`}}>
+                            <p className="text-white text-[15px] lg:text-[22px] leading-relaxed font-medium">{issue[selected]}</p>
                           </div>
                         </div>
                       )}
-                      <button onClick={() => { setSelected(null); setExpanded(null); setRank(null); }}
-                        className="w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-700 mt-2 py-2 border border-slate-300 rounded-xl bg-white hover:bg-slate-50 transition-all">
-                        ← Change my answer
-                      </button>
+
+                      {/* Rank gauge + stacked buttons — only after a view is chosen and not browsing */}
+                      {selected && selected !== 'D' && !browsingViews && (
+                        <div className="mt-3 flex flex-col gap-3 w-full">
+                          {/* Rank gauge — full width */}
+                          <div className="p-3 lg:p-5 rounded-2xl transition-all duration-300" style={{border: rank ? `2px solid ${selColor}66` : '2px solid rgba(251,191,36,0.7)', boxShadow: rank ? 'none' : '0 0 18px rgba(251,191,36,0.35)', background:`linear-gradient(160deg,${selColor}14,${selColor}06)`}}>
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-xs lg:text-sm font-black text-slate-300 uppercase tracking-widest">How much does this drive your vote?</p>
+                              {rank && <span className="text-xs lg:text-sm font-black text-white">{rank}/10</span>}
+                            </div>
+                            <div className="flex gap-1 lg:gap-2">
+                              {Array.from({length: 10}, (_, i) => i + 1).map(n => {
+                                const filled = n <= (rank || 0);
+                                const intensity = filled ? (0.3 + (n / 10) * 0.7) : 1;
+                                return (
+                                  <button key={n} onClick={() => setRank(n)}
+                                    className="flex-1 h-2 lg:h-4 rounded-full transition-all duration-150 hover:opacity-90"
+                                    style={{ backgroundColor: filled ? selColor : 'rgba(255,255,255,0.18)', opacity: filled ? intensity : 1 }} />
+                                );
+                              })}
+                            </div>
+                            <div className="flex justify-between mt-2">
+                              <span className="text-[10px] lg:text-xs font-bold text-slate-300">Less important</span>
+                              <span className="text-[10px] lg:text-xs font-bold text-slate-300">Most important</span>
+                            </div>
+                          </div>
+                          {/* ADD VIEW — standalone */}
+                          {rank && (
+                            <div className="text-center">
+                              <button onClick={handleSave}
+                                className="text-xs lg:text-sm font-black px-10 lg:px-16 py-2.5 lg:py-4 rounded-full uppercase tracking-widest transition-all hover:opacity-90"
+                                style={{background:`linear-gradient(90deg,${selColorDark},${selColor})`, letterSpacing:'0.12em', color:'#fff'}}>
+                                Add Your View →
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {selected === 'D' && (
+                        <div className="mt-3 text-center">
+                          <button onClick={handleSave}
+                            className="text-xs lg:text-sm font-black px-8 lg:px-12 py-2 lg:py-3 rounded-full uppercase tracking-widest hover:opacity-90 transition-all"
+                            style={{background:'#1e293b', border:'1px solid rgba(255,255,255,0.2)', letterSpacing:'0.12em', color:'#fff'}}>
+                            Add Your View →
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 }
                 return (
                   <div className="flex flex-col gap-2 mb-4">
-                    {views.map(({ choice, viewLabel, headerBg, border, borderLight, labelColor, bodyBg, bodyText }) => {
+                    {views.map(({ choice, viewLabel, color, colorDark }) => {
                       const isOpen = expanded === choice;
                       return (
-                        <div key={choice} className={`rounded-xl overflow-hidden border-2 ${isOpen ? border : borderLight}`}>
+                        <div key={choice} className="rounded-2xl overflow-hidden transition-all duration-200"
+                          style={{border:`1px solid ${isOpen ? color : color+'55'}`, boxShadow: isOpen ? `0 0 16px ${color}33` : 'none'}}>
                           <button onClick={() => setExpanded(isOpen ? null : choice)}
-                            className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors ${isOpen ? `${headerBg} text-white` : 'bg-white hover:bg-slate-50'}`}>
-                            <span className={`font-bold text-sm ${isOpen ? 'text-white' : labelColor}`}>{viewLabel}</span>
-                            <svg className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            className="w-full flex items-center justify-between px-4 lg:px-6 py-3.5 lg:py-5 transition-colors"
+                            style={{background: isOpen ? `linear-gradient(90deg,${colorDark},${color})` : 'rgba(255,255,255,0.04)'}}>
+                            <span className="font-black text-sm lg:text-xl uppercase tracking-widest" style={{color: isOpen ? '#fff' : color}}>{viewLabel}</span>
+                            <svg className={`w-4 h-4 lg:w-5 lg:h-5 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-white' : ''}`} style={{color: isOpen ? '#fff' : color}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
                           {isOpen && (
-                            <div className={`px-4 pt-3 pb-4 ${bodyBg} border-t border-current border-opacity-10`}>
-                              <p className={`text-sm leading-relaxed font-medium ${bodyText} mb-3`}>{issue[choice]}</p>
-                              <button onClick={() => handleSelect(choice)}
-                                className={`w-full py-2 rounded-lg text-sm font-bold text-white ${headerBg} hover:opacity-90 transition-opacity`}>
-                                This is my view →
-                              </button>
+                            <div className="px-5 lg:px-7 pt-4 lg:pt-6 pb-5 lg:pb-7" style={{background:`linear-gradient(160deg,${color}1a,${color}08)`}}>
+                              <p className="text-white text-[14px] lg:text-[22px] leading-relaxed font-medium mb-4 lg:mb-6">{issue[choice]}</p>
+                              {choice === selected ? (
+                                <div className="flex justify-center">
+                                  <span className="text-xs lg:text-sm font-black uppercase tracking-widest px-6 py-2 rounded-full" style={{color, border:`1.5px solid ${color}`, opacity:0.7}}>✓ Your current view</span>
+                                </div>
+                              ) : (
+                                <div className="flex justify-center">
+                                  <button onClick={() => handleSelect(choice)}
+                                    className="px-8 lg:px-12 py-2.5 lg:py-4 rounded-full text-xs lg:text-sm font-black text-white uppercase tracking-widest hover:opacity-90 transition-opacity"
+                                    style={{background:`linear-gradient(90deg,${colorDark},${color})`}}>
+                                    This is my view →
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       );
                     })}
                     <button onClick={() => handleSelect('D')}
-                      className="w-full text-center py-3 rounded-xl text-sm font-semibold text-slate-500 border-2 border-dashed border-slate-300 hover:border-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 transition-all">
+                      className="w-full text-center py-3 rounded-2xl text-xs font-black text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors"
+                      style={{border:'1px dashed rgba(255,255,255,0.15)'}}>
                       No Opinion on this issue
                     </button>
                   </div>
                 );
               })()}
-
-              {/* Rank gauge — only shown after a view is selected */}
-              {selected && (() => {
-                const rankBorder = selected === 'A' ? 'border-blue-500 shadow-blue-100' : selected === 'B' ? 'border-purple-500 shadow-purple-100' : selected === 'C' ? 'border-red-500 shadow-red-100' : 'border-slate-100';
-                return (
-              <div className={`mt-1 p-3 rounded-xl border-2 transition-all duration-300 ${rankBorder} bg-white shadow-lg`}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-black text-slate-700 uppercase tracking-wide">How much does this drive your vote?</p>
-                  {rank && <span className="text-xs font-black" style={{ color: pillColor(10) }}>{rank}/10</span>}
-                </div>
-                <div className="flex gap-1">
-                  {Array.from({length: 10}, (_, i) => i + 1).map(n => (
-                    <button key={n} onClick={() => setRank(n)}
-                      className="flex-1 h-5 rounded-full transition-all duration-150"
-                      style={{ backgroundColor: n <= (rank || 0) ? pillColor(n) : '#e2e8f0' }} />
-                  ))}
-                </div>
-                <div className="flex justify-between mt-2">
-                  <span className="text-[10px] font-bold text-slate-500">Less important</span>
-                  <span className="text-[10px] font-bold text-slate-500">Most important</span>
-                </div>
-              </div>
-                );
-              })()}
-
-              <button onClick={handleSave} disabled={!selected}
-                className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm mt-3">
-                Submit Your View →
-              </button>
             </div>
           </div>
         </div>
@@ -1428,109 +1730,287 @@
     }
 
     // ─── SUMMARY ───
-    function Summary({ issues, answers, ranks, onBuildBallot, onViewConstellation, onAnswerMore, onHome, onStartOver }) {
-      const VIEW_LABEL = { A: 'Liberal View', B: 'Moderate View', C: 'Conservative View', D: 'No Opinion' };
-      const DOT_BG    = { A: 'bg-blue-500',  B: 'bg-purple-500',  C: 'bg-red-500',         D: 'bg-slate-300' };
-      const TEXT_CLR  = { A: 'text-blue-600', B: 'text-purple-600', C: 'text-red-500',      D: 'text-slate-400' };
+    function Summary({ issues, answers, ranks, onMatchAll, onMatchMine, onViewConstellation, onAnswerMore, onHome, onStartOver, county }) {
+      const [showChallenge, setShowChallenge] = React.useState(false);
+      const [showAddressModal, setShowAddressModal] = React.useState(false);
+      const [copied, setCopied] = React.useState(false);
+      const [showDrop, setShowDrop] = React.useState(false);
+
+      function handleCopy() {
+        const url = buildChallengeUrl(answers, ranks);
+        navigator.clipboard.writeText(url).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      }
+
+      function handleEmail() {
+        const url = buildChallengeUrl(answers, ranks);
+        const subject = encodeURIComponent("I challenged you on VoteYourViews.org");
+        const body = encodeURIComponent(`I just ranked my beliefs on VoteYourViews.org — a nonpartisan Texas voter guide.\n\nTake the quiz and see how your views compare to mine:\n${url}\n\nIt only takes a few minutes!`);
+        window.open(`mailto:?subject=${subject}&body=${body}`);
+      }
+
+      function handleText() {
+        const url = buildChallengeUrl(answers, ranks);
+        const msg = encodeURIComponent(`I challenged you on VoteYourViews.org — take the quiz and see how your views compare to mine: ${url}`);
+        window.open(`sms:?&body=${msg}`);
+      }
+      const VIEW_LABEL  = { A: 'Liberal', B: 'Moderate', C: 'Conservative', D: 'No Opinion' };
+      const VIEW_COLOR  = { A: '#3b82f6', B: '#a855f7', C: '#ef4444', D: '#64748b' };
+      const VIEW_BG     = { A: 'rgba(59,130,246,0.22)', B: 'rgba(168,85,247,0.22)', C: 'rgba(239,68,68,0.22)', D: 'rgba(100,116,139,0.15)' };
+      const VIEW_BG_TOP = { A: 'rgba(59,130,246,0.38)', B: 'rgba(168,85,247,0.38)', C: 'rgba(239,68,68,0.38)', D: 'rgba(100,116,139,0.22)' };
 
       const answeredIssues   = issues.filter(i => answers[i.id]);
       const unansweredIssues = issues.filter(i => !answers[i.id]);
       const answeredCount    = answeredIssues.length;
       const canConstellation = answeredCount >= 3;
 
+      // Sort answered by rank descending (most important first), then unanswered at end
+      const sortedAnswered = [...answeredIssues].sort((a,b) => (ranks[b.id]||5) - (ranks[a.id]||5));
+      const allIssuesOrdered = [...sortedAnswered, ...unansweredIssues];
+      // Only show #1 badge if the top issue has a strictly higher rank than the second
+      const topRank = sortedAnswered[0] ? (ranks[sortedAnswered[0].id]||5) : 0;
+      const secondRank = sortedAnswered[1] ? (ranks[sortedAnswered[1].id]||5) : 0;
+      const hasUniqueTop = sortedAnswered.length > 0;
+      const topRankValue = sortedAnswered[0] ? (ranks[sortedAnswered[0].id]||5) : 0;
+      // Dominant color — most common view among answered issues
+      const viewCounts = { A:0, B:0, C:0 };
+      answeredIssues.forEach(i => { if(answers[i.id] && answers[i.id] !== 'D') viewCounts[answers[i.id]]++; });
+      const dominantChoice = Object.entries(viewCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'A';
+      const dominantColor = VIEW_COLOR[dominantChoice] || '#3b82f6';
+      const dominantColorDark = dominantChoice === 'C' ? '#991b1b' : dominantChoice === 'B' ? '#7e22ce' : '#1d4ed8';
+      const dominantColorMid = dominantChoice === 'C' ? '#dc2626' : dominantChoice === 'B' ? '#9333ea' : '#2563eb';
+
       return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(160deg,#0f172a 0%,#020617 100%)'}}>
 
           {/* Header */}
-          <div className="bg-white border-b border-slate-200 px-4 py-3">
-            <div className="max-w-2xl mx-auto flex items-center justify-between">
-              <button onClick={onHome} className="text-sm text-slate-500 hover:text-slate-800 font-medium">← Home</button>
-              <div className="text-sm font-bold text-slate-900">Build My Ballot</div>
-              <button onClick={onStartOver} className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors">Start Over</button>
+          <div className="border-b border-slate-800 px-4 py-3">
+            <div className="max-w-5xl mx-auto flex items-center justify-between">
+              <button onClick={onHome} className="text-sm text-slate-400 hover:text-white font-medium transition-colors">← Home</button>
+              <div className="text-sm font-bold text-white tracking-wide uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'0.1em'}}>Your Views</div>
+              <button onClick={onStartOver} className="text-xs text-slate-500 hover:text-red-400 font-medium transition-colors">Start Over</button>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center px-6 py-10 fade-in">
-            <div className="max-w-lg w-full">
+          <div className="flex-1 max-w-5xl mx-auto w-full px-4 lg:px-24 py-4">
 
-              <h1 className="text-2xl font-black text-slate-900 mb-1">Build Your Ballot</h1>
-              <p className="text-slate-500 text-sm mb-8">
-                {answeredCount === 0
-                  ? 'Tap a belief below to get started.'
-                  : `Based on your ${answeredCount} chosen view${answeredCount === 1 ? '' : 's'}.`}
-              </p>
+            {/* Headline */}
+            <div className="mb-3 text-center">
+              <h1 className="font-black text-2xl lg:text-4xl leading-tight mb-1">
+                <span className="text-slate-400 font-light text-lg lg:text-2xl lowercase mr-1">your</span>
+                <span className="text-white uppercase">View of Views</span>
+              </h1>
+            </div>
 
-              {/* Answered beliefs */}
-              {answeredCount > 0 && (
-                <div className="mb-6">
-                  <h2 className="text-base font-black text-slate-800 mb-3">Your Chosen Views</h2>
-                  <div className="flex flex-col gap-2">
-                    {answeredIssues.map(issue => {
-                      const choice = answers[issue.id];
-                      return (
-                        <button
-                          key={issue.id}
-                          onClick={() => onAnswerMore(issue.id)}
-                          className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all text-left group"
-                        >
-                          <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">{issue.topic}</span>
-                          <div className="flex items-center gap-2 shrink-0 ml-4">
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${DOT_BG[choice]}`} />
-                            <span className={`text-xs font-bold ${TEXT_CLR[choice]}`}>{VIEW_LABEL[choice]}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
+            {/* ── Answered issues ── */}
+            {sortedAnswered.length > 0 && (
+              <>
+                <div className="flex flex-col gap-1.5 mb-2 mt-10">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {Array.from({length:9},(_,i) => {
+                        const dotIssue = sortedAnswered[i];
+                        const dotColor = dotIssue ? VIEW_COLOR[answers[dotIssue.id]] : null;
+                        return <div key={i} className="w-5 h-2 rounded-full transition-all" style={{background: dotColor || 'rgba(255,255,255,0.12)'}} />;
+                      })}
+                    </div>
+                    <span className="text-slate-400 text-[10px] font-bold">{answeredCount}/9</span>
                   </div>
+                  <span className="text-slate-500 text-[10px] uppercase tracking-widest font-semibold">Your Custom Ranking</span>
                 </div>
-              )}
-
-              {/* Unanswered topics */}
-              {unansweredIssues.length > 0 && (
-                <div className="mb-8">
-                  <h2 className="text-base font-black text-slate-800 mb-3">
-                    {answeredCount === 0 ? 'Choose Your Views' : 'Choose More Views'}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {unansweredIssues.map(issue => (
+                <div className="grid grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 mb-3">
+                  {sortedAnswered.map((issue, idx) => {
+                    const choice = answers[issue.id];
+                    const rank = ranks[issue.id] || 0;
+                    const color = VIEW_COLOR[choice];
+                    const isTopIssue = (ranks[issue.id]||5) === topRankValue && hasUniqueTop;
+                    return (
                       <button
                         key={issue.id}
                         onClick={() => onAnswerMore(issue.id)}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold text-slate-500 bg-white border border-slate-200 hover:border-slate-400 hover:text-slate-800 transition-all"
+                        className="group relative flex flex-col items-center rounded-2xl overflow-hidden transition-all hover:scale-105"
+                        style={{
+                          background: isTopIssue
+                            ? `linear-gradient(160deg, ${VIEW_BG_TOP[choice]}, rgba(255,255,255,0.12))`
+                            : `linear-gradient(160deg, ${VIEW_BG[choice]}, rgba(255,255,255,0.09))`,
+                          border: isTopIssue ? `2px solid ${color}` : `1px solid ${color}aa`,
+                          boxShadow: isTopIssue ? `0 0 28px ${color}66, 0 0 10px ${color}44` : `0 0 14px ${color}38`
+                        }}
                       >
-                        {issue.topic}
+                        {/* Fixed-size image area */}
+                        <div className="w-full px-3 pt-3 flex-shrink-0">
+                          <div className="w-full" style={{height:'85px', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                            <img
+                              src={`./icons/symbols/${issue.symbol}.png`}
+                              alt={issue.topic}
+                              style={{maxWidth:'90%', maxHeight:'85px', objectFit:'contain'}}
+                              onError={e => { e.target.style.display='none'; }}
+                            />
+                          </div>
+                        </div>
+                        {/* Fixed rank bar area */}
+                        <div className="w-full px-2 pt-2" style={{height:'36px'}}>
+                          {rank > 0 && (
+                            <>
+                              <div className="flex gap-0.5">
+                                {Array.from({length:10},(_,i)=>i+1).map(n => (
+                                  <div key={n} className="flex-1 h-2 rounded" style={{background: n <= rank ? color : 'rgba(255,255,255,0.12)'}} />
+                                ))}
+                              </div>
+                              <p className="text-[10px] text-right mt-0.5 font-black" style={{color: 'rgba(255,255,255,0.75)'}}>{rank}/10</p>
+                            </>
+                          )}
+                        </div>
+                        {/* Fixed text area — always 2-line topic height */}
+                        <div className="w-full px-2 pb-3 text-center">
+                          <p className="text-white text-sm font-bold leading-tight mb-0" style={{fontFamily:"'Barlow Condensed',sans-serif", minHeight:'2.5em', display:'flex', alignItems:'center', justifyContent:'center'}}>{issue.topic.replace(' & Border','').replace('Reproductive','Reprod.')}</p>
+                          <p className="text-xs font-bold mt-0" style={{color, marginTop:'-2px'}}>{VIEW_LABEL[choice]}</p>
+                        </div>
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* ── 3 CTAs ── */}
+            <div className={`max-w-xl mx-auto mb-3 px-2 ${answeredCount === 0 ? 'opacity-30 pointer-events-none' : ''}`} style={{marginTop:'70px'}}>
+              <div className="flex flex-col gap-2">
+                  <div className={`relative ${BTN.wrap}`}>
+                    <div className="flex rounded-full overflow-hidden"
+                      style={{background:`linear-gradient(90deg,${dominantColorDark},${dominantColorMid})`}}>
+                      <button onClick={onMatchAll}
+                        className={`flex-1 ${BTN.primary}`}
+                        style={{letterSpacing:'0.12em'}}>
+                        Choose Candidates
+                      </button>
+                      <button onClick={() => setShowDrop(d => !d)}
+                        className="px-4 border-l border-white/20 text-white hover:bg-white/10 transition-colors flex items-center">
+                        <svg className={`w-3.5 h-3.5 transition-transform ${showDrop ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                      </button>
+                    </div>
+                    {showDrop && (
+                      <div className="absolute top-full mt-1 left-0 right-0 rounded-2xl overflow-hidden shadow-xl z-20 border border-white/10"
+                        style={{background:'#1e293b'}}>
+                        <button onClick={() => { setShowDrop(false); onMatchAll(); }}
+                          className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                          style={{letterSpacing:'0.1em'}}>
+                          All Candidates
+                        </button>
+                        <button onClick={() => { setShowDrop(false); setShowAddressModal(true); }}
+                          className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
+                          style={{letterSpacing:'0.1em'}}>
+                          My Candidates
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                <div className="flex items-center justify-center gap-3 py-2">
+                  {[['Save','💾'],['Send','📤'],['Share','🔗']].map(([label], i) => (
+                    <React.Fragment key={label}>
+                      {i > 0 && <span className="text-slate-400 text-xs">•</span>}
+                      <button onClick={() => setShowChallenge(true)}
+                        className="text-xs font-black uppercase tracking-widest transition-all duration-150 hover:opacity-100 opacity-90"
+                        style={{color: '#ffffff', letterSpacing:'0.14em'}}>
+                        {label}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Address Modal ── */}
+            {showAddressModal && (
+              <AddressModal
+                county={county || 'hays'}
+                accentColor={dominantColorMid}
+                accentColorDark={dominantColorDark}
+                onClose={() => setShowAddressModal(false)}
+                onContinue={(districts) => { setShowAddressModal(false); onMatchMine(districts); }}
+                onShowAll={() => { setShowAddressModal(false); onMatchAll(); }}
+              />
+            )}
+
+            {/* ── Challenge Modal ── */}
+            {showChallenge && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setShowChallenge(false)}>
+                <div className="absolute inset-0 bg-black/60" />
+                <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-slate-700"
+                     style={{background:'linear-gradient(160deg,#0f172a,#020617)'}}
+                     onClick={e => e.stopPropagation()}>
+                  <div className="px-6 pt-6 pb-2">
+                    <h2 className="text-white font-black text-xl mb-1">Challenge a Friend</h2>
+                    <p className="text-slate-400 text-sm leading-relaxed">Share this link. They take the quiz — then see how your views compare.</p>
+                  </div>
+
+                  {/* URL preview */}
+                  <div className="mx-6 my-4 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700">
+                    <p className="text-slate-400 text-xs font-mono truncate">{buildChallengeUrl(answers, ranks)}</p>
+                  </div>
+
+                  {/* Options */}
+                  <div className="px-6 pb-6 flex flex-col gap-2">
+                    <button onClick={handleCopy}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+                      {copied ? '✓ Copied!' : '📋 Copy Link'}
+                    </button>
+                    <button onClick={handleEmail}
+                      className="w-full py-3 border border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+                      ✉️ Send Email
+                    </button>
+                    <button onClick={handleText}
+                      className="w-full py-3 border border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+                      💬 Send Text
+                    </button>
+                    <button onClick={() => setShowChallenge(false)}
+                      className="w-full py-2 text-slate-500 hover:text-slate-300 text-sm font-medium transition-colors mt-1">
+                      ✕ Close
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* CTAs */}
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={onBuildBallot}
-                  disabled={answeredCount === 0}
-                  className="w-full py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
-                >
-                  Build My Ballot →
-                </button>
-                <button
-                  onClick={canConstellation ? onViewConstellation : undefined}
-                  disabled={!canConstellation}
-                  className={`w-full py-3 border-2 font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 ${
-                    canConstellation
-                      ? 'border-slate-300 text-slate-700 hover:border-slate-400'
-                      : 'border-slate-200 text-slate-300 cursor-not-allowed'
-                  }`}
-                >
-                  <span>🌌</span>
-                  {canConstellation
-                    ? 'View My Political Constellation'
-                    : `View My Constellation (${3 - answeredCount} more belief${3 - answeredCount === 1 ? '' : 's'} needed)`}
-                </button>
               </div>
+            )}
 
-            </div>
+            {/* ── Unanswered issues ── */}
+            {unansweredIssues.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 border-t border-slate-500" />
+                  <p className="text-white text-sm uppercase tracking-widest font-black whitespace-nowrap">+ Add more views</p>
+                  <div className="flex-1 border-t border-slate-500" />
+                </div>
+                <div className="flex flex-wrap gap-2 mb-10">
+                  {unansweredIssues.map((issue) => (
+                    <button
+                      key={issue.id}
+                      onClick={() => onAnswerMore(issue.id)}
+                      className="group relative flex flex-col items-center gap-1 transition-opacity duration-200"
+                      style={{width: '72px'}}
+                    >
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-white/30 group-active:scale-95 transition-all duration-150 shadow-lg">
+                        <img
+                          src={`./icons/${issue.icon || issue.id}.png`}
+                          alt={issue.topic}
+                          className="w-full h-full object-cover"
+                          onError={e => { e.target.style.display='none'; e.target.parentNode.style.background='#1e293b'; }}
+                        />
+                      </div>
+                      <span className="text-slate-300 text-[10px] font-bold text-center leading-tight group-hover:text-white transition-all duration-150 px-0.5" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>
+                        {issue.topic.replace('Social Security & Medicare','Social Programs').replace('Housing & Affordability','Affordability')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+
+
           </div>
         </div>
       );
@@ -1898,12 +2378,14 @@
                       {!candidate.confirmed && (
                         <p className="text-xs text-amber-600 mt-2 font-medium">⚠ Nominee pending confirmation</p>
                       )}
-                      {/* Issue breakdown */}
+                      {/* Issue breakdown — matches first, then mismatches */}
                       <div className="mt-3 space-y-1">
-                        {matched.slice(0, 4).map(issue => (
+                        {[...matched].sort((a,b) => (b.matched ? 2 : b.userChoice==='B' ? 1 : 0) - (a.matched ? 2 : a.userChoice==='B' ? 1 : 0)).slice(0, 4).map(issue => (
                           <div key={issue.id} className="flex items-center gap-1.5 text-xs">
-                            <span className={issue.matched ? 'text-emerald-500' : 'text-red-400'}>{issue.matched ? '✓' : '✗'}</span>
-                            <span className={issue.matched ? 'text-slate-700' : 'text-slate-400'}>{issue.topic}</span>
+                            <span className={issue.matched ? 'text-emerald-500' : issue.userChoice==='B' ? 'text-amber-500' : 'text-red-400'}>
+                              {issue.matched ? '✓' : issue.userChoice==='B' ? '~' : '✗'}
+                            </span>
+                            <span className={issue.matched ? 'text-slate-700' : issue.userChoice==='B' ? 'text-slate-600' : 'text-slate-400'}>{issue.topic}</span>
                           </div>
                         ))}
                         {matched.length > 4 && (
@@ -1984,69 +2466,101 @@
     const POS_LABEL  = { A:'Liberal', B:'Moderate', C:'Conservative', D:'N/A' };
 
     // ── Candidate quote/profile sheet ──────────────────────────────────────
-    function CandidateProfile({ candidate, issues, answers, onClose }) {
+    function CandidateProfile({ candidate, issues, answers, onClose, onSelect, isSelected, raceName }) {
       const hasAnswers = answers && Object.keys(answers).length > 0;
       const border = candidate.party === 'D' ? 'border-blue-500' : candidate.party === 'R' ? 'border-red-500' : 'border-slate-300';
-      const accentBg = candidate.party === 'D' ? 'bg-blue-600' : 'bg-red-600';
+      const accentBg = candidate.party === 'D' ? 'bg-blue-600' : candidate.party === 'R' ? 'bg-red-600' : 'bg-slate-700';
       return (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/60 lg:items-center lg:justify-center lg:p-8">
+          <div className="flex flex-col bg-white lg:rounded-2xl lg:shadow-2xl lg:max-w-3xl w-full lg:max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className={`${accentBg} px-4 pt-10 pb-4`}>
+          <div className={`${accentBg} px-6 pt-6 pb-5 relative flex-shrink-0`}>
             <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
             <div className="flex items-center gap-4">
-              <div className={`w-20 h-20 rounded-full border-4 border-white/50 overflow-hidden bg-white/20 flex-shrink-0`}>
+              <div className="w-16 h-16 rounded-full border-4 border-white/50 overflow-hidden bg-white/20 flex-shrink-0">
                 <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name}
                   className="w-full h-full object-cover object-top"
                   onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
               </div>
               <div>
                 <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
-                <h2 className="text-white font-black text-xl leading-tight">{candidate.name}</h2>
-                {candidate.website && (
-                  <a href={candidate.website} target="_blank" rel="noopener noreferrer"
-                    className="text-white/70 text-xs underline mt-0.5 block">Website ↗</a>
-                )}
+                <div className="flex items-center gap-2">
+                  <h2 className="text-white font-black text-xl leading-tight">{candidate.name}</h2>
+                  {candidate.website && (
+                    <a href={candidate.website} target="_blank" rel="noopener noreferrer"
+                      className="text-white/70 hover:text-white transition-colors flex-shrink-0" title="Visit website">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                      </svg>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
             {candidate.summary && (
-              <p className="text-white/90 text-sm font-semibold mt-3 leading-relaxed">{candidate.summary}</p>
+              <p className="text-white/90 font-semibold mt-3 leading-relaxed" style={{fontSize:'17px'}}>{candidate.summary}</p>
+            )}
+            {candidate.website && (
+              <a href={candidate.website} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-3 px-4 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-bold text-sm uppercase tracking-wide transition-colors"
+                style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.06em'}}>
+                Visit Website ↗
+              </a>
+            )}
+            {onSelect && (
+              <div className="mt-4 flex justify-center">
+                <button onClick={() => { onSelect(); onClose(); }}
+                  className={`px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-colors ${isSelected ? 'bg-white/20 text-white border border-white/40 hover:bg-white/30' : 'bg-white text-slate-900 hover:bg-white/90'}`}
+                  style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.08em'}}>
+                  {isSelected ? '✓ On Ballot — Remove' : `Add ${candidate.name.split(' ').slice(-1)[0]} to Ballot`}
+                </button>
+              </div>
             )}
           </div>
-          {/* Issue positions */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-            {issues && issues.map((issue, idx) => {
-              const pos = candidate.positions?.[issue.id];
-              const voterPos = answers?.[issue.id];
-              const isMatch = hasAnswers && voterPos && voterPos !== 'D' && pos === voterPos;
-              const isMismatch = hasAnswers && voterPos && voterPos !== 'D' && pos !== voterPos;
-              const posText = issue[pos] || ''; // full optionA/B/C text
-              return (
-                <div key={issue.id} className={`px-4 py-3 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : ''}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${POS_DOT[pos] || 'bg-slate-300'}`} />
-                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
-                    {isMatch && <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">✓ Matches you</span>}
-                    {isMismatch && <span className="ml-auto text-[10px] font-bold text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded-full">✗ Differs</span>}
+          {/* Issue positions — 2 columns on desktop */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="lg:grid lg:grid-cols-2 divide-y divide-slate-100 lg:divide-y-0">
+              {issues && issues.map((issue, idx) => {
+                const pos = candidate.positions?.[issue.id];
+                const voterPos = answers?.[issue.id];
+                const isMatch = hasAnswers && voterPos && voterPos !== 'D' && pos === voterPos;
+                const isMismatch = hasAnswers && voterPos && voterPos !== 'D' && pos !== voterPos;
+                const posText = issue[pos] || '';
+                return (
+                  <div key={issue.id} className={`px-5 py-3 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${POS_DOT[pos] || 'bg-slate-300'}`} />
+                      <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
+                      {isMatch && <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">✓ Match</span>}
+                      {isMismatch && <span className="ml-auto text-[10px] font-bold text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded-full">✗ Differs</span>}
+                    </div>
+                    <p className={`text-sm leading-relaxed ${pos ? POS_COLOR[pos] : 'text-slate-400'} font-medium`}>
+                      {posText || <span className="text-slate-300 italic">Position not available</span>}
+                    </p>
                   </div>
-                  <p className={`text-sm leading-relaxed ${pos ? POS_COLOR[pos] : 'text-slate-400'} font-medium`}>
-                    {posText || <span className="text-slate-300 italic">Position not available</span>}
-                  </p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
           </div>
         </div>
       );
     }
 
     // ── Race detail comparison table ────────────────────────────────────────
-    function RaceDetail({ race, issues, answers, ranks, selected, onSelect, onBack, onNextRace, onPrevRace, onQuiz, onHome }) {
+    function RaceDetail({ race, issues, answers, ranks, selected, onSelect, onBack, onNextRace, onPrevRace, onQuiz, onHome, inline=false }) {
       const candidates = race.candidates.filter(Boolean).slice(0, 2);
       const hasAnswers = answers && Object.keys(answers).length > 0;
       const currentSelected = selected[race.office];
       const [profileCandidate, setProfileCandidate] = useState(null);
       const [sourceModal, setSourceModal] = useState(null); // { candidate, issue }
       const [panelOpen, setPanelOpen] = useState(false);
+      const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+      useEffect(() => {
+        const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+      }, []);
       const drag = useRef({active:false, startX:0, startY:0, baseOffset:0, w:165, isHoriz:null});
 
       // Scroll to top whenever the race changes
@@ -2117,7 +2631,8 @@
       };
 
       return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className={inline ? '' : 'min-h-screen lg:bg-slate-100'}>
+        <div className={`bg-white flex flex-col ${inline ? '' : 'min-h-screen lg:max-w-5xl lg:mx-auto lg:shadow-xl'}`}>
           {profileCandidate && (
             <CandidateProfile
               candidate={profileCandidate}
@@ -2155,8 +2670,8 @@
                         onError={e=>{e.target.src='./icons/candidate-undefined.png';e.target.className='w-full h-full object-contain object-bottom';e.target.style.opacity='0.5';}} />
                     </div>
                     <div>
-                      <p className={`text-xs font-black uppercase tracking-wide ${partyColor}`}>{candidate.name}</p>
-                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{issue.topic}</p>
+                      <p className={`text-sm font-black uppercase tracking-wide ${partyColor}`}>{candidate.name}</p>
+                      <p className="text-[13px] font-black text-slate-400 uppercase tracking-widest">{issue.topic}</p>
                     </div>
                   </div>
                   {/* Position text + source */}
@@ -2166,7 +2681,7 @@
                     const posText = issue[cPos]; // full optionA/B/C text
                     const lastName = candidate.name.split(' ').slice(-1)[0];
                     return posText ? (
-                      <p className={`text-sm leading-relaxed ${POS_COLOR[cPos]}`}>
+                      <p className={`text-base leading-relaxed ${POS_COLOR[cPos]}`}>
                         <span className="font-semibold text-slate-500 not-italic">It is {lastName}'s position that </span>
                         {posText.charAt(0).toLowerCase() + posText.slice(1)}
                       </p>
@@ -2175,7 +2690,7 @@
                   {quote ? (
                     <div className="bg-slate-50 rounded-xl p-3">
                       {quote.text && (
-                        <p className="text-slate-800 text-sm leading-relaxed mb-2 italic">"{quote.text}"</p>
+                        <p className="text-slate-800 text-base leading-relaxed mb-2 italic">"{quote.text}"</p>
                       )}
                       {quote.source && (
                         <p className="text-[11px] text-slate-500 font-semibold">— {quote.source}</p>
@@ -2204,8 +2719,9 @@
             );
           })()}
 
-          {/* Top nav — big impact header */}
-          <div className="sticky top-0 z-20 bg-slate-900">
+          {/* Top nav — big impact header — hidden entirely when inline (Browse shows its own dark header) */}
+          <div className={`bg-slate-900 ${inline ? 'hidden' : 'sticky top-0 z-20'}`}>
+            {/* Nav row */}
             <div className="flex items-center justify-between px-4 pt-3 pb-1" style={{position:'relative'}}>
               {onPrevRace ? (
                 <button onClick={onPrevRace} className="text-white hover:text-slate-200 text-sm font-bold flex items-center gap-1 outline-none focus:outline-none">
@@ -2233,20 +2749,59 @@
                 <div className="w-14" />
               )}
             </div>
-            <div className="text-center px-4 pt-2 pb-4">
-              <h1 className="text-white font-black uppercase leading-none"
-                style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'28px', letterSpacing:'0.04em'}}>
-                {race.office.replace(/ of Texas$/i,'')}
-              </h1>
-              {(() => {
-                const info = getOfficeInfo(race.office);
-                return info ? (
-                  <p className="text-slate-400 text-[11px] mt-1.5 leading-relaxed max-w-sm mx-auto px-2">{info}</p>
-                ) : race.description ? (
-                  <p className="text-slate-400 text-[11px] mt-1.5 leading-relaxed max-w-sm mx-auto px-2">{race.description}</p>
-                ) : null;
-              })()}
-            </div>
+            {isDesktop ? (
+              /* Desktop: title left, candidate action buttons right */
+              <div className="flex border-t border-white/10">
+                {/* Left 50%: race title + description */}
+                <div className="w-1/2 px-8 py-5 flex flex-col justify-center border-r border-white/10">
+                  <h1 className="text-white font-black uppercase leading-tight"
+                    style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'32px', letterSpacing:'0.04em'}}>
+                    {race.office.replace(/ of Texas$/i,'')}
+                  </h1>
+                  {(() => {
+                    const info = getOfficeInfo(race.office);
+                    const txt = info || race.description;
+                    return txt ? <p className="text-slate-400 text-xs mt-2 leading-relaxed max-w-md">{txt}</p> : null;
+                  })()}
+                </div>
+                {/* Right 50%: action buttons above each candidate column */}
+                <div className="w-1/2 flex">
+                  {candidates.filter(Boolean).slice(0,2).map(c => {
+                    const isChosen = currentSelected === c.name;
+                    const btnColor = isChosen?'bg-emerald-500 hover:bg-emerald-600':c.party==='D'?'bg-blue-600 hover:bg-blue-700':'bg-red-600 hover:bg-red-700';
+                    return (
+                      <div key={c.name} className="w-1/2 px-4 py-4 flex flex-col gap-2 border-r border-white/10">
+                        <div className="text-xs font-black text-slate-400 uppercase tracking-wide text-center mb-1">{c.name}</div>
+                        <button onClick={() => setProfileCandidate(c)}
+                          className={`py-2 rounded-lg border font-bold transition-colors ${c.party==='D'?'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100':'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'}`}
+                          style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'14px'}}>All Issues</button>
+                        <button onClick={() => onSelect(race.office, isChosen?null:c.name)}
+                          className={`py-2 rounded-lg text-white font-black transition-colors ${btnColor}`}
+                          style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'14px'}}>
+                          {isChosen?'✓ On Ballot':`Add ${c.name.split(' ').slice(-1)[0]}`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* Mobile: centered title */
+              <div className="text-center px-4 pt-2 pb-4">
+                <h1 className="text-white font-black uppercase leading-none"
+                  style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'28px', letterSpacing:'0.04em'}}>
+                  {race.office.replace(/ of Texas$/i,'')}
+                </h1>
+                {(() => {
+                  const info = getOfficeInfo(race.office);
+                  return info ? (
+                    <p className="text-slate-400 text-[11px] mt-1.5 leading-relaxed max-w-sm mx-auto px-2">{info}</p>
+                  ) : race.description ? (
+                    <p className="text-slate-400 text-[11px] mt-1.5 leading-relaxed max-w-sm mx-auto px-2">{race.description}</p>
+                  ) : null;
+                })()}
+              </div>
+            )}
           </div>
 
           {(() => {
@@ -2254,9 +2809,150 @@
             const colCands = currentSelected
               ? [...candidates].sort((a,b) => a.name===currentSelected ? -1 : 1)
               : candidates;
-            const DOC_PATH = "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z";
+            const DOC_PATH = "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z";
             const candAccent = c => c.party==='D' ? '#3b82f6' : c.party==='R' ? '#ef4444' : '#94a3b8';
             const candColor  = c => c.party==='D' ? 'text-blue-600' : c.party==='R' ? 'text-red-600' : 'text-slate-500';
+
+            // ── DESKTOP LAYOUT (>= 1024px): 4 equal columns, all visible, no sliding ──
+            if (isDesktop) {
+              const sortedIssues = [...(issues||[])].sort((a,b) => (ranks?.[b.id]||0)-(ranks?.[a.id]||0));
+              return (
+                <>
+                  {/* Desktop sticky header — when inline sticks below dark race header + browse nav */}
+                  <div className={`sticky z-10 bg-white border-b border-slate-300 shadow-sm flex ${inline ? 'top-[170px]' : 'top-[160px]'}`}>
+                    {/* Issue col */}
+                    <div className="w-1/4 border-r-2 border-slate-400 flex flex-col items-center justify-center py-3 gap-1.5">
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Issue</span>
+                      <div className="flex flex-col gap-0.5 mt-1">
+                        <div className="flex items-center gap-1.5 text-xs"><span className="text-emerald-500 font-black">✓</span><span className="text-slate-400">Match</span></div>
+                        <div className="flex items-center gap-1.5 text-xs"><span className="text-amber-400 font-black">~</span><span className="text-slate-400">Partial</span></div>
+                        <div className="flex items-center gap-1.5 text-xs"><span className="text-rose-400 font-black">✗</span><span className="text-slate-400">Differs</span></div>
+                      </div>
+                    </div>
+                    {/* ME col */}
+                    <div className="w-1/4 border-r-2 border-slate-400 flex flex-col items-center justify-center py-3 gap-1">
+                      <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center">
+                        <span className="text-white font-black text-base">ME</span>
+                      </div>
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">My View</span>
+                    </div>
+                    {/* Candidate columns — All Issues + Add buttons */}
+                    {colCands.map(c => {
+                      const isChosen = currentSelected === c.name;
+                      const btnAdd = isChosen
+                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        : c.party==='D' ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-red-600 hover:bg-red-700 text-white';
+                      const btnIssues = c.party==='D'
+                        ? 'bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100'
+                        : 'bg-red-50 border border-red-200 text-red-700 hover:bg-red-100';
+                      return (
+                        <div key={c.name} className={`w-1/4 border-r-2 border-slate-400 flex flex-col items-center gap-2 px-4 py-4 ${isChosen?'bg-emerald-50':''}`}>
+                          <button onClick={() => setProfileCandidate(c)}
+                            className={`px-5 py-1.5 rounded-full font-bold text-xs transition-colors ${btnIssues}`}
+                            style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.05em'}}>All Issues</button>
+                          <button onClick={() => onSelect(race.office, isChosen ? null : c.name)}
+                            className={`px-5 py-1.5 rounded-full font-black text-xs transition-colors ${btnAdd}`}
+                            style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.05em'}}>
+                            {isChosen ? '✓ On Ballot' : `Add ${c.name.split(' ').slice(-1)[0]}`}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop issue rows */}
+                  <div className={`divide-y divide-slate-100 ${inline ? 'overflow-y-auto no-scrollbar' : 'flex-1'}`} style={inline ? {maxHeight:'calc(100vh - 400px)'} : {}}>
+                    {sortedIssues.map((issue, idx) => {
+                      const voterPos = answers?.[issue.id];
+                      const voterAnswered = voterPos && voterPos !== 'D';
+                      const issueRank = ranks?.[issue.id] || 0;
+                      return (
+                        <div key={issue.id} className={`flex items-stretch min-h-[90px] ${idx%2===0?'bg-white':'bg-slate-100'}`}>
+                          {/* Issue col — large icon */}
+                          <div className="w-1/4 border-r-2 border-slate-400 flex flex-col items-center justify-center gap-2 px-4 py-4 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center shadow-sm">
+                              <img src={`./icons/symbols/${issue.symbol}.png`} alt="" className="w-10 h-10 object-contain"
+                                onError={e=>{e.target.parentNode.style.background='#334155';e.target.style.display='none';}} />
+                            </div>
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide leading-tight">{issue.topic}</span>
+                          </div>
+                          {/* ME col */}
+                          <div className="w-1/4 border-r-2 border-slate-400 flex flex-col items-center justify-center gap-1 py-3">
+                            {voterPos === 'D' ? (
+                              <button onClick={() => onQuiz?.(issue.id)} className="flex flex-col items-center gap-1 group">
+                                <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                                  <svg className="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M18 12H6"/></svg>
+                                </div>
+                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wide">Skipped</span>
+                              </button>
+                            ) : voterAnswered ? (
+                              <button onClick={() => onQuiz?.(issue.id)} className="flex flex-col items-center gap-1 group">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-black border-2 group-hover:opacity-80 transition-opacity ${POS_BG[voterPos]} ${POS_COLOR[voterPos]}`}
+                                  style={{borderColor:voterPos==='A'?'#3b82f6':voterPos==='B'?'#7c3aed':voterPos==='C'?'#ef4444':'#94a3b8'}}>
+                                  {POS_LABEL[voterPos]?.slice(0,3)}
+                                </div>
+                                {issueRank > 0 && <div className="flex gap-0.5">{[1,2,3,4,5].map(d=><div key={d} className={`w-1.5 h-1.5 rounded-full ${d<=Math.round(issueRank/2)?'bg-slate-600':'bg-slate-200'}`}/>)}</div>}
+                              </button>
+                            ) : (
+                              <button onClick={() => onQuiz?.(issue.id)} className="flex flex-col items-center gap-1 group">
+                                <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-400 flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                                  <svg className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                </div>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Add View</span>
+                              </button>
+                            )}
+                          </div>
+                          {/* Candidate doc icon cols */}
+                          {colCands.map(c => {
+                            const cPos = c.positions?.[issue.id];
+                            const isMatch = voterAnswered && cPos === voterPos;
+                            const isPartial = voterAnswered && voterPos === 'B' && cPos && cPos !== 'D';
+                            const isMismatch = voterAnswered && voterPos && voterPos !== 'B' && cPos && cPos !== voterPos;
+                            return (
+                              <div key={c.name} className="w-1/4 border-r-2 border-slate-400 flex items-center justify-center py-3">
+                                {cPos && cPos !== 'D' ? (
+                                  <button onClick={() => setSourceModal({candidate:c, issue})} className="relative group active:scale-95 hover:scale-105 transition-transform">
+                                    <div className="relative px-3 py-2 rounded-2xl flex items-center justify-center transition-all duration-150"
+                                      style={{border:`2px solid ${candAccent(c)}`, boxShadow:`0 2px 8px ${candAccent(c)}33`, background:'white'}}
+                                      onMouseEnter={e=>{e.currentTarget.style.background=candAccent(c); e.currentTarget.querySelector('span').style.color='white';}}
+                                      onMouseLeave={e=>{e.currentTarget.style.background='white'; e.currentTarget.querySelector('span').style.color=candAccent(c);}}>
+                                      <span className="text-xs font-black uppercase tracking-widest transition-colors" style={{color: candAccent(c)}}>My View</span>
+                                      {/* Speech bubble tail */}
+                                      <span className="absolute -bottom-[9px] left-1/2 -translate-x-1/2 w-0 h-0"
+                                        style={{borderLeft:'7px solid transparent', borderRight:'7px solid transparent', borderTop:`7px solid ${candAccent(c)}`}}/>
+                                      <span className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-0 h-0"
+                                        style={{borderLeft:'6px solid transparent', borderRight:'6px solid transparent', borderTop:'6px solid white'}}/>
+                                    </div>
+                                    {isMatch && <span className="absolute -top-1 -right-1 text-[9px] bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-black">✓</span>}
+                                    {isPartial && <span className="absolute -top-1 -right-1 text-[9px] bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center font-black">~</span>}
+                                    {isMismatch && <span className="absolute -top-1 -right-1 text-[9px] bg-rose-400 text-white rounded-full w-4 h-4 flex items-center justify-center font-black">✗</span>}
+                                  </button>
+                                ) : <span className="text-slate-300 text-2xl">—</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop bottom bar — navigation only — hidden when inline */}
+                  <div className={`sticky bottom-0 bg-white border-t border-slate-200 shadow-lg flex px-6 py-2.5 gap-4 items-center ${inline ? 'hidden' : ''}`}>
+                    {onPrevRace
+                      ? <button onClick={onPrevRace} className="flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'15px'}}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>Prev Race</button>
+                      : <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'15px'}}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>All Races</button>}
+                    <div className="flex-1 flex justify-center">
+                      <button onClick={onBack} className="text-xs font-bold text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Back to All Races
+                      </button>
+                    </div>
+                    {onNextRace && <button onClick={onNextRace} className="flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'15px'}}>Next Race<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg></button>}
+                  </div>
+                </>
+              );
+            }
             // 3-panel strip: [ME | CandA | CandB], container=250px, strip=375px (150%)
             // panelOpen=false (default): translateX(0%)       → shows ME+CandA
             // panelOpen=true:            translateX(-33.33%) → shows CandA+CandB
@@ -2265,7 +2961,7 @@
             return (
               <>
                 {/* ── Sticky header ── */}
-                <div className="sticky top-[88px] z-10 bg-white border-b border-slate-300 shadow-sm flex items-center overflow-hidden">
+                <div className={`sticky z-10 bg-white border-b border-slate-300 shadow-sm flex items-center overflow-hidden ${inline ? 'top-[115px]' : 'top-[88px]'}`}>
                   {/* Frozen: Issue only */}
                   <div className="self-stretch flex-shrink-0 border-r-2 border-slate-400 flex items-center justify-center" style={{width:'33.333%'}}>
                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-wide">Issue</span>
@@ -2371,11 +3067,16 @@
                               return (
                                 <div key={c.name} style={{width:P}} className="flex items-center justify-center py-2 border-r border-slate-200">
                                   {cPos && cPos !== 'D' ? (
-                                    <button onClick={() => setSourceModal({candidate:c, issue})} className="relative group">
-                                      <div className={`w-14 h-14 rounded-full border-2 group-active:scale-90 transition-transform bg-white flex items-center justify-center ${isMatch?'border-emerald-400':isMismatch?'border-rose-300':'border-slate-300'}`}>
-                                        <svg className={`w-7 h-7 ${POS_COLOR[cPos]}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d={DOC_PATH} />
-                                        </svg>
+                                    <button onClick={() => setSourceModal({candidate:c, issue})} className="relative group active:scale-95 hover:scale-105 transition-transform">
+                                      <div className="relative px-2 py-1.5 rounded-xl flex items-center justify-center transition-all duration-150"
+                                        style={{border:`2px solid ${candAccent(c)}`, boxShadow:`0 2px 8px ${candAccent(c)}33`, background:'white'}}
+                                        onMouseEnter={e=>{e.currentTarget.style.background=candAccent(c); e.currentTarget.querySelector('span').style.color='white';}}
+                                        onMouseLeave={e=>{e.currentTarget.style.background='white'; e.currentTarget.querySelector('span').style.color=candAccent(c);}}>
+                                        <span className="text-[9px] font-black uppercase tracking-widest transition-colors" style={{color: candAccent(c)}}>My View</span>
+                                        <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-0 h-0"
+                                          style={{borderLeft:'6px solid transparent', borderRight:'6px solid transparent', borderTop:`6px solid ${candAccent(c)}`}}/>
+                                        <span className="absolute -bottom-[4px] left-1/2 -translate-x-1/2 w-0 h-0"
+                                          style={{borderLeft:'5px solid transparent', borderRight:'5px solid transparent', borderTop:'5px solid white'}}/>
                                       </div>
                                       {isMatch && <span className="absolute -top-1 -right-1 text-[8px] bg-emerald-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center font-black">✓</span>}
                                       {isMismatch && <span className="absolute -top-1 -right-1 text-[8px] bg-rose-400 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center font-black">✗</span>}
@@ -2464,136 +3165,231 @@
             );
           })()}
         </div>
+        </div>
       );
     }
 
-    function Browse({ county, counties, issues, answers, ranks, selected, setSelected, userDistricts, onBallot, onHome, onQuiz, initialRace, clearInitialRace }) {
+    function Browse({ county, counties, issues, answers, ranks, selected, setSelected, userDistricts, setUserDistricts, onBallot, onHome, onQuiz, initialRace, clearInitialRace }) {
       const countyData = counties[county];
-      const [selectedRace, setSelectedRace] = useState(null);
-      const [collapsedSections, setCollapsedSections] = useState({ state: true, county: true, judicial: true });
+      const [activeTab, setActiveTab] = useState('federal');
+      const [expandedRaces, setExpandedRaces] = useState(new Set());
+      const [showFilterModal, setShowFilterModal] = useState(false);
+      const [browseProfile, setBrowseProfile] = useState(null); // {candidate, race}
+
+      const TABS = [
+        { key: 'federal',  label: 'Federal' },
+        { key: 'state',    label: 'State' },
+        { key: 'county',   label: 'County' },
+        { key: 'judicial', label: 'Judicial' },
+      ];
 
       // Auto-open a race when returning from quiz
       useEffect(() => {
         if (initialRace && countyData) {
-          const allRaces = RACE_SECTIONS.flatMap(s => filterRacesByDistrict(countyData[s.key] || [], userDistricts));
-          const race = allRaces.find(r => r.office === initialRace.office);
-          if (race) setSelectedRace(race);
+          const sec = RACE_SECTIONS.find(s => (countyData[s.key]||[]).some(r => r.office === initialRace.office));
+          if (sec) {
+            setActiveTab(sec.key);
+            setExpandedRaces(prev => new Set([...prev, initialRace.office]));
+          }
           clearInitialRace?.();
         }
       }, [initialRace]);
 
-      if (selectedRace) {
-        const allRaces = RACE_SECTIONS.flatMap(s => filterRacesByDistrict(countyData[s.key] || [], userDistricts));
-        const currentIdx = allRaces.findIndex(r => r.office === selectedRace.office);
-        const nextRace = allRaces[currentIdx + 1] || null;
-        const prevRace = allRaces[currentIdx - 1] || null;
-        return <RaceDetail
-          race={selectedRace}
-          issues={issues}
-          answers={answers}
-          ranks={ranks}
-          selected={selected}
-          onSelect={(office, name) => setSelected(prev => name ? { ...prev, [office]: name } : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== office)))}
-          onBack={() => setSelectedRace(null)}
-          onNextRace={nextRace ? () => setSelectedRace(nextRace) : null}
-          onPrevRace={prevRace ? () => setSelectedRace(prevRace) : null}
-          onQuiz={(id) => onQuiz(id, selectedRace)}
-          onHome={onHome}
-        />;
+      function toggleRace(office) {
+        setExpandedRaces(prev => {
+          const next = new Set(prev);
+          next.has(office) ? next.delete(office) : next.add(office);
+          return next;
+        });
       }
 
-      function toggleSection(key) {
-        setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
-      }
+      const races = filterRacesByDistrict(countyData[activeTab] || [], userDistricts);
+      const selectedCount = Object.keys(selected).length;
 
       return (
-        <div className="min-h-screen bg-slate-100">
+        <div className="bg-slate-100 min-h-screen">
+          {/* Header */}
           <header className="bg-white border-b border-slate-200 px-4 py-3.5 sticky top-0 z-10">
-            <div className="max-w-3xl mx-auto flex items-center justify-between">
+            <div className="max-w-5xl mx-auto flex items-center justify-between">
               <button onClick={onHome} className="text-sm text-slate-500 hover:text-slate-800 font-medium">← Home</button>
-              <div>
-                <div className="text-xs text-slate-400 font-medium text-center leading-none mb-0.5">{counties[county].name}</div>
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="text-xs text-slate-400 font-medium text-center leading-none">{counties[county].name}</div>
                 <div className="text-sm font-black text-slate-900 text-center">All Candidates</div>
               </div>
-              <button
-                onClick={onBallot}
-                disabled={Object.keys(selected).length === 0}
-                className="text-xs bg-slate-900 text-white font-bold px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-30"
-              >
-                {Object.keys(selected).length > 0 ? `Ballot (${Object.keys(selected).length})` : 'View Ballot'}
+              <button onClick={onBallot} disabled={selectedCount === 0}
+                className="text-xs bg-slate-900 text-white font-bold px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-30">
+                {selectedCount > 0 ? `Ballot (${selectedCount})` : 'View Ballot'}
+              </button>
+            </div>
+
+            {/* Tab bar */}
+            <div className="max-w-5xl mx-auto mt-3 flex gap-2 items-center">
+              {TABS.map(tab => {
+                const isActive = tab.key === activeTab;
+                const tabRaces = filterRacesByDistrict(countyData[tab.key] || [], userDistricts);
+                const tabSelected = tabRaces.filter(r => selected[r.office]).length;
+                return (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    className="flex-1 py-2 rounded-xl text-xs lg:text-sm font-black uppercase tracking-tight lg:tracking-widest transition-all duration-150"
+                    style={isActive
+                      ? {background:'#0f172a', color:'#fff', boxShadow:'0 2px 8px rgba(0,0,0,0.18)'}
+                      : {background:'#f1f5f9', color:'#334155', border:'2px solid #cbd5e1'}}>
+                    {tab.label}
+                    {tabSelected > 0 && <span className="ml-1.5 text-emerald-400">·{tabSelected}</span>}
+                  </button>
+                );
+              })}
+              <button onClick={() => setShowFilterModal(true)}
+                title={userDistricts ? 'Update My Filter' : 'Filter My Candidates'}
+                className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-base transition-all duration-150"
+                style={{background: userDistricts ? '#2563eb' : 'transparent', color: userDistricts ? '#fff' : '#94a3b8', border:'2px solid ' + (userDistricts ? '#2563eb' : '#e2e8f0')}}>
+                ⚙
               </button>
             </div>
           </header>
 
-          <main className="max-w-3xl mx-auto px-3 py-4 space-y-3">
-            {userDistricts && (
-              <div className="flex flex-wrap gap-1.5 px-1">
-                {userDistricts.congressionalDistrict && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">US House · Dist. {userDistricts.congressionalDistrict}</span>}
-                {userDistricts.stateSenate && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">TX Senate · Dist. {userDistricts.stateSenate}</span>}
-                {userDistricts.stateHouse && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">TX House · Dist. {userDistricts.stateHouse}</span>}
-                {userDistricts.jpPrecinct && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">JP Pct {userDistricts.jpPrecinct}</span>}
-                {userDistricts.commissionerPrecinct && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">Comm. Pct {userDistricts.commissionerPrecinct}</span>}
-              </div>
-            )}
+          {/* District chips */}
+          {userDistricts && (
+            <div className="max-w-5xl mx-auto px-4 pt-3 flex flex-wrap gap-1.5">
+              {userDistricts.congressionalDistrict && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">US House · Dist. {userDistricts.congressionalDistrict}</span>}
+              {userDistricts.stateSenate && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">TX Senate · Dist. {userDistricts.stateSenate}</span>}
+              {userDistricts.stateHouse && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">TX House · Dist. {userDistricts.stateHouse}</span>}
+              {userDistricts.jpPrecinct && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">JP Pct {userDistricts.jpPrecinct}</span>}
+              {userDistricts.commissionerPrecinct && <span className="text-xs px-2.5 py-1 bg-white text-slate-600 rounded-full border border-slate-200 font-semibold shadow-sm">Comm. Pct {userDistricts.commissionerPrecinct}</span>}
+            </div>
+          )}
 
-            {RACE_SECTIONS.filter(sec => filterRacesByDistrict(countyData[sec.key] || [], userDistricts).length > 0).map(sec => {
-              const races = filterRacesByDistrict(countyData[sec.key] || [], userDistricts);
-              const meta = SECTION_META[sec.key] || SECTION_META.state;
-              const isCollapsed = collapsedSections[sec.key];
-              const selectedCount = races.filter(r => selected[r.office]).length;
+          {/* Race list */}
+          <main className="max-w-5xl mx-auto px-4 py-4 space-y-2">
+            {races.length === 0 && (
+              <div className="text-center py-16 text-slate-400 text-sm">No races in this category for your district.</div>
+            )}
+            {races.map(race => {
+              const isExpanded = expandedRaces.has(race.office);
+              const isSelected = !!selected[race.office];
+              const score = answers && Object.keys(answers).length > 0
+                ? Math.max(...race.candidates.filter(Boolean).map(c => calcMatch(c, answers) || 0))
+                : null;
               return (
-                <div key={sec.key} className="rounded-2xl overflow-hidden shadow-md">
-                  {/* Section header */}
-                  <button
-                    onClick={() => toggleSection(sec.key)}
-                    className={`w-full bg-gradient-to-r ${meta.accent} px-5 py-5 flex items-center justify-between`}
-                  >
-                    <div className="flex items-center gap-4">
-                      {meta.img
-                        ? <img src={meta.img} alt="" className="h-14 w-auto object-contain flex-shrink-0" />
-                        : <span className="text-3xl leading-none flex-shrink-0">{meta.icon}</span>
-                      }
-                      <div className="text-left">
-                        <div className="text-xl font-black text-white uppercase tracking-widest leading-tight" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>{sec.label}</div>
-                        <div className="text-[11px] text-slate-400 font-semibold mt-1">
-                          {races.length} race{races.length !== 1 ? 's' : ''}
-                          {selectedCount > 0 && <span className="text-emerald-400 ml-2">· {selectedCount} selected</span>}
-                        </div>
+                <div key={race.office} id={'race-'+race.office.replace(/\s+/g,'-')} className="rounded-2xl shadow-sm border border-slate-800" style={{overflow: isExpanded ? 'visible' : 'hidden'}}>
+                  {/* Dark header */}
+                  <div className="sticky top-0 z-20 w-full flex flex-col lg:flex-row"
+                    style={{background:'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)'}}>
+
+                    {/* Mobile: full-width title row / Desktop: left 50% (title + description) */}
+                    <button onClick={() => toggleRace(race.office)}
+                      className="w-full lg:w-1/2 flex text-left hover:brightness-110 transition-all cursor-pointer border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/20">
+                      {/* Title col */}
+                      <div className="flex-1 lg:w-1/2 px-5 py-4 lg:py-5 flex items-center justify-center lg:flex-col lg:items-center lg:justify-center border-r border-white/20">
+                        {isSelected && <span className="text-sm text-emerald-400 font-bold mr-2 lg:mr-0 lg:mb-2">✓</span>}
+                        <h2 className="text-white font-black uppercase leading-tight text-center"
+                          style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'20px', letterSpacing:'0.04em'}}>
+                          {race.office.replace(/ of Texas$/i,'').replace(/ of the State of Texas$/i,'').replace(/\s*[–—-]\s*(?=District)/i,' • ')}
+                        </h2>
                       </div>
+                      {/* Description col — desktop only */}
+                      <div className="hidden lg:flex w-1/2 px-5 py-5 flex-col justify-center">
+                        {(() => {
+                          const info = getOfficeInfo(race.office);
+                          const txt = info || race.description;
+                          return txt ? <p className="text-slate-400 text-xs leading-relaxed">{txt}</p> : null;
+                        })()}
+                        {isSelected && <div className="text-xs text-emerald-400 font-bold mt-2">✓ {selected[race.office]}</div>}
+                      </div>
+                    </button>
+
+                    {/* Candidate columns — 50/50 on mobile, 25/25 on desktop */}
+                    <div className="w-full lg:w-1/2 flex relative">
+                      {/* Compare button — mobile only, centered between candidates */}
+                      <button
+                        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest border hover:scale-105 active:scale-95 transition-all duration-150 ${isExpanded ? 'bg-white text-slate-900 border-white hover:bg-white/90' : 'text-white border-white/30 hover:border-white/70 hover:bg-white/20'}`}
+                        style={{background: isExpanded ? undefined : 'rgba(15,23,42,0.95)', letterSpacing:'0.1em'}}
+                        onClick={() => {
+                          toggleRace(race.office);
+                          if (!isExpanded) setTimeout(() => {
+                            document.getElementById('race-'+race.office.replace(/\s+/g,'-'))?.scrollIntoView({behavior:'smooth', block:'start'});
+                          }, 50);
+                        }}>
+                        {isExpanded ? '✕ Close' : 'Compare'}
+                      </button>
+                      {race.candidates.filter(Boolean).slice(0,2).map(c => {
+                        const accent = c.party==='D'?'#3b82f6':c.party==='R'?'#ef4444':'#94a3b8';
+                        const partyLabel = c.party==='D'?'Democrat':c.party==='R'?'Republican':'Independent';
+                        const partyColor = c.party==='D'?'text-blue-400':c.party==='R'?'text-red-400':'text-slate-400';
+                        return (
+                          <button key={c.name}
+                            onClick={() => setBrowseProfile({candidate: c, race})}
+                            className="flex-1 flex flex-col items-center justify-center py-4 lg:py-5 gap-2 border-r border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                            <p className="text-[11px] font-black text-slate-200 uppercase tracking-widest text-center leading-tight">{c.name}</p>
+                            <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden border-[3px] bg-slate-700" style={{borderColor: accent}}>
+                              <img src={c.photo||'./icons/candidate-undefined.png'} alt={c.name} className="w-full h-full object-cover object-top"
+                                onError={e=>{e.target.src='./icons/candidate-undefined.png';}} />
+                            </div>
+                            <span className={`text-[10px] font-bold uppercase tracking-wide ${partyColor}`}>{partyLabel}</span>
+                            <span className="text-[9px] text-white/40 uppercase tracking-wider">Tap to learn more</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <svg className={`w-5 h-5 text-slate-400 transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {/* Race rows */}
-                  {!isCollapsed && (
-                    <div className="bg-white divide-y divide-slate-100">
-                      {races.map(race => (
-                        <BrowseRaceCard
-                          key={race.office}
-                          race={race}
-                          answers={answers}
-                          selected={selected}
-                          onToggle={() => setSelectedRace(race)}
-                        />
-                      ))}
+                  </div>
+
+                  {/* Expanded inline grid */}
+                  {isExpanded && (
+                    <div>
+                      <RaceDetail
+                        race={race}
+                        issues={issues}
+                        answers={answers}
+                        ranks={ranks}
+                        selected={selected}
+                        onSelect={(office, name) => setSelected(prev => name ? {...prev, [office]: name} : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== office)))}
+                        onBack={() => toggleRace(race.office)}
+                        onNextRace={null}
+                        onPrevRace={null}
+                        onQuiz={(id) => onQuiz(id, race)}
+                        onHome={onHome}
+                        inline={true}
+                      />
                     </div>
                   )}
                 </div>
               );
             })}
 
-            {Object.keys(selected).length > 0 && (
+            {selectedCount > 0 && (
               <div className="pt-2 pb-6">
-                <button
-                  onClick={onBallot}
-                  className="w-full py-4 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors text-sm tracking-wide"
-                >
-                  Build My Ballot ({Object.keys(selected).length} race{Object.keys(selected).length !== 1 ? 's' : ''} selected) →
+                <button onClick={onBallot}
+                  className="w-full py-4 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors text-sm tracking-wide">
+                  Build My Ballot ({selectedCount} race{selectedCount !== 1 ? 's' : ''} selected) →
                 </button>
               </div>
             )}
           </main>
+
+          {showFilterModal && (
+            <AddressModal
+              county={county || 'hays'}
+              accentColor="#2563eb"
+              onClose={() => setShowFilterModal(false)}
+              onContinue={(districts) => { if (setUserDistricts) setUserDistricts(districts); setShowFilterModal(false); }}
+            />
+          )}
+
+          {browseProfile && (
+            <CandidateProfile
+              candidate={browseProfile.candidate}
+              issues={issues}
+              answers={answers}
+              onClose={() => setBrowseProfile(null)}
+              isSelected={selected[browseProfile.race.office] === browseProfile.candidate.name}
+              onSelect={() => setSelected(prev => {
+                const isChosen = prev[browseProfile.race.office] === browseProfile.candidate.name;
+                return isChosen
+                  ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== browseProfile.race.office))
+                  : {...prev, [browseProfile.race.office]: browseProfile.candidate.name};
+              })}
+            />
+          )}
         </div>
       );
     }
@@ -2653,6 +3449,16 @@
     function Ballot({ county, counties, selected, answers, issues, userDistricts, onHome, onEdit }) {
       const countyData = counties[county];
       const hasAnswers = answers && Object.keys(answers).length > 0;
+
+      // Set document title for PDF filename when printing
+      useEffect(() => {
+        const today = new Date();
+        const month = today.toLocaleString('default', { month: 'long' });
+        const day = today.getDate();
+        const year = today.getFullYear();
+        document.title = `My Midterm Ballot - ${month} ${day} ${year}`;
+        return () => { document.title = 'Vote Your Views — Texas Voter Guide 2026'; };
+      }, []);
 
       // For each race: get chosen candidate OR best match OR first candidate
       function getBestCandidate(race) {
@@ -2803,8 +3609,8 @@
     function App() {
       const [screen, setScreen] = useState(SHEETS.master ? 'loading' : 'landing');
       const [county, setCounty] = useState('hays');
-      const [answers, setAnswers] = useState({});
-      const [ranks, setRanks] = useState({});
+      const [answers, setAnswers] = useState(() => { try { return JSON.parse(localStorage.getItem('vyv_answers') || '{}'); } catch(e) { return {}; } });
+      const [ranks, setRanks] = useState(() => { try { return JSON.parse(localStorage.getItem('vyv_ranks') || '{}'); } catch(e) { return {}; } });
       const [selected, setSelected] = useState({});
       const [issues, setIssues] = useState(ISSUES);
       const [counties, setCounties] = useState(COUNTIES);
@@ -2812,6 +3618,10 @@
       const [dataSource, setDataSource] = useState(SHEETS.master ? 'loading' : 'demo');
       const [userDistricts, setUserDistricts] = useState(null);
       const [pendingScreen, setPendingScreen] = useState('quiz');
+
+      // Persist answers + ranks to localStorage
+      React.useEffect(() => { try { localStorage.setItem('vyv_answers', JSON.stringify(answers)); } catch(e) {} }, [answers]);
+      React.useEffect(() => { try { localStorage.setItem('vyv_ranks', JSON.stringify(ranks)); } catch(e) {} }, [ranks]);
       const [startIssueId, setStartIssueId] = useState(null);
       const [returnToSummary, setReturnToSummary] = useState(false);
       const [returnToRace, setReturnToRace] = useState(null);   // { office } → go back to RaceDetail after quiz
@@ -2876,10 +3686,10 @@
             dataSource={dataSource}
             issues={issues}
             answers={answers}
-            onQuiz={(id) => { setStartIssueId(id || null); setScreen('quiz'); }}
+            onQuiz={(id) => { setStartIssueId(id || null); setPendingScreen('landing'); setScreen('quiz'); }}
             onSummary={() => setScreen('summary')}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); }}
-            onBrowse={() => goToAddress('browse')}
+            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); localStorage.removeItem('vyv_answers'); localStorage.removeItem('vyv_ranks'); }}
+            onBrowse={() => setScreen('browse')}
           />
         );
       }
@@ -2898,7 +3708,7 @@
               if (pendingScreen === 'quiz') { setAnswers({}); setRanks({}); setSelected({}); }
               setScreen(pendingScreen);
             }}
-            onBack={() => setScreen(pendingScreen === 'results' ? 'constellation' : 'landing')}
+            onBack={() => setScreen(pendingScreen === 'results' ? 'summary' : 'landing')}
           />
         );
       }
@@ -2926,9 +3736,10 @@
             onBack={() => {
               setStartIssueId(null);
               if (returnToRace) { setInitialRace(returnToRace); setReturnToRace(null); setScreen('browse'); }
+              else if (pendingScreen === 'summary') setScreen('summary');
               else setScreen('landing');
             }}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); }}
+            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); localStorage.removeItem('vyv_answers'); localStorage.removeItem('vyv_ranks'); }}
           />
         );
       }
@@ -2939,11 +3750,13 @@
             issues={issues}
             answers={answers}
             ranks={ranks}
-            onBuildBallot={() => goToAddress('results')}
+            county={county}
+            onMatchAll={() => setScreen('browse')}
+            onMatchMine={(districts) => { setUserDistricts(districts); setScreen('results'); }}
             onViewConstellation={() => setScreen('constellation')}
-            onAnswerMore={(id) => { setStartIssueId(id); setScreen('quiz'); }}
+            onAnswerMore={(id) => { setStartIssueId(id); setPendingScreen('summary'); setScreen('quiz'); }}
             onHome={() => { setStartIssueId(null); setScreen('landing'); }}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); }}
+            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); localStorage.removeItem('vyv_answers'); localStorage.removeItem('vyv_ranks'); }}
           />
         );
       }
@@ -2955,7 +3768,7 @@
             answers={answers}
             ranks={ranks}
             onContinue={() => goToAddress('results')}
-            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); }}
+            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); localStorage.removeItem('vyv_answers'); localStorage.removeItem('vyv_ranks'); }}
           />
         );
       }
@@ -2971,7 +3784,7 @@
             setSelected={setSelected}
             userDistricts={userDistricts}
             onBallot={() => setScreen('ballot')}
-            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); }}
+            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); localStorage.removeItem('vyv_answers'); localStorage.removeItem('vyv_ranks'); }}
             onBrowse={() => setScreen('browse')}
           />
         );
@@ -2988,6 +3801,7 @@
             selected={selected}
             setSelected={setSelected}
             userDistricts={userDistricts}
+            setUserDistricts={setUserDistricts}
             onBallot={() => setScreen('ballot')}
             onHome={() => setScreen('landing')}
             onQuiz={(id, race) => {
