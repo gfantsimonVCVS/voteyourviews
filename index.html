@@ -208,6 +208,29 @@
       }).filter(i => i.id);
     }
 
+    // Temporary Hook 1 / Hook 2 copy until the sheet gets `hook1` and `hook2` columns
+    const HOOK1_FALLBACK = {
+      'James Talarico': 'A former middle-school teacher who gave up a safe seat to bet his career on the hardest race in Texas.',
+      'Ken Paxton': 'Impeached by his own party, acquitted by the Senate — and still standing. Few politicians have survived more.',
+    };
+    const HOOK2_FALLBACK = {
+      'James Talarico': 'Talarico taught sixth grade in San Antonio before becoming one of the youngest legislators in Texas history. A seminary graduate who quotes scripture in floor debates, he built a following by arguing with conviction — and going viral doing it.',
+      'Ken Paxton': 'Paxton has been at the center of Texas politics for a decade — and at the center of controversy nearly as long. Securities fraud charges, whistleblower lawsuits, an FBI investigation, an impeachment trial: he outlasted them all, and his voters never wavered.',
+    };
+    // DEMO receipts — verify before launch. Sheet columns `<issueId>Evidence` override these.
+    const EVIDENCE_FALLBACK = {
+      'James Talarico': {
+        reproductiveRights: `Talarico, as a state representative, voted against Texas’s abortion ban and has called for restoring exceptions for rape, incest, and medical emergencies.`,
+        education: `Talarico served on the House Public Education Committee and led opposition to school voucher bills, arguing they would defund public schools.`,
+        healthcare: `Talarico co-authored legislation to expand Medicaid coverage in Texas, citing the number of uninsured Texans.`,
+      },
+      'Ken Paxton': {
+        reproductiveRights: `Paxton, as Texas Attorney General, personally defended the state’s abortion ban in court and filed suit to restrict abortion pills nationwide.`,
+        immigration: `Paxton sued the federal government dozens of times over border policy and was a vocal defender of Operation Lone Star.`,
+        gunPolicy: `Paxton issued official AG opinions opposing federal gun regulations and supported Texas’s constitutional carry law.`,
+      },
+    };
+
     function buildRaces(rows) {
       const raceMap = {};
       rows.forEach(row => {
@@ -225,16 +248,11 @@
           };
         }
         const positions = {};
-        POSITION_KEYS.forEach(k => { positions[k] = row[k] || null; });
-        // Temporary Hook 1 / Hook 2 copy until the sheet gets `hook1` and `hook2` columns
-        const HOOK1_FALLBACK = {
-          'James Talarico': 'A former middle-school teacher who gave up a safe seat to bet his career on the hardest race in Texas.',
-          'Ken Paxton': 'Impeached by his own party, acquitted by the Senate — and still standing. Few politicians have survived more.',
-        };
-        const HOOK2_FALLBACK = {
-          'James Talarico': 'Talarico taught sixth grade in San Antonio before becoming one of the youngest legislators in Texas history. A seminary graduate who quotes scripture in floor debates, he built a following by arguing with conviction — and going viral doing it.',
-          'Ken Paxton': 'Paxton has been at the center of Texas politics for a decade — and at the center of controversy nearly as long. Securities fraud charges, whistleblower lawsuits, an FBI investigation, an impeachment trial: he outlasted them all, and his voters never wavered.',
-        };
+        const evidence = {};
+        POSITION_KEYS.forEach(k => {
+          positions[k] = row[k] || null;
+          evidence[k] = row[k + 'Evidence'] || EVIDENCE_FALLBACK[row.name]?.[k] || null;
+        });
         raceMap[row.office].candidates.push({
           name: row.name,
           party: row.party,
@@ -243,7 +261,8 @@
           photo: row.photo || null,
           summary: row.hook2 || HOOK2_FALLBACK[row.name] || row.summary || '',
           hook: row.hook1 || HOOK1_FALLBACK[row.name] || null,
-          positions
+          positions,
+          evidence
         });
       });
       return Object.values(raceMap);
@@ -1257,7 +1276,7 @@
           <header className="flex items-center justify-center px-0 py-0 lg:py-5 border-b border-white/5">
 
             {/* Logo — color full-width on mobile, white fixed-height on desktop */}
-            <img src="./icons/VoteYourViews_Logo_Color.png" alt="VoteYourViews.org" className="w-full h-auto block lg:hidden" style={{transform:'scale(0.92)', transformOrigin:'top center', marginBottom:'-5px'}} />
+            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full h-auto block lg:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)'}} />
 
             {/* Desktop: logo + election info centered together as a unit */}
             <div className="hidden lg:flex items-center gap-10 xl:gap-14">
@@ -2480,6 +2499,7 @@
     // ── Candidate quote/profile sheet ──────────────────────────────────────
     function CandidateProfile({ candidate, issues, answers, onClose, onSelect, isSelected, raceName }) {
       const hasAnswers = answers && Object.keys(answers).length > 0;
+      const [openIssues, setOpenIssues] = useState({});
       const border = candidate.party === 'D' ? 'border-blue-500' : candidate.party === 'R' ? 'border-red-500' : 'border-slate-300';
       const accentBg = candidate.party === 'D' ? 'bg-blue-800' : candidate.party === 'R' ? 'bg-red-800' : 'bg-slate-800';
       return (
@@ -2541,24 +2561,67 @@
             <div className="lg:grid lg:grid-cols-2 divide-y divide-slate-100 lg:divide-y-0">
               {issues && issues.map((issue, idx) => {
                 const pos = candidate.positions?.[issue.id];
+                const hasStance = pos === 'A' || pos === 'B' || pos === 'C';
                 const voterPos = answers?.[issue.id];
-                const isMatch = hasAnswers && voterPos && voterPos !== 'D' && pos === voterPos;
-                const isMismatch = hasAnswers && voterPos && voterPos !== 'D' && pos !== voterPos;
+                const isMatch = hasAnswers && voterPos && voterPos !== 'D' && hasStance && pos === voterPos;
+                const isMismatch = hasAnswers && voterPos && voterPos !== 'D' && hasStance && pos !== voterPos;
                 const posText = issue[pos] || '';
+                const evidence = candidate.evidence?.[issue.id];
+                const stance = pos === 'A' ? { label: 'Liberal position', word: 'liberal', chip: 'bg-blue-100 text-blue-700' }
+                  : pos === 'B' ? { label: 'Moderate position', word: 'moderate', chip: 'bg-purple-100 text-purple-700' }
+                  : pos === 'C' ? { label: 'Conservative position', word: 'conservative', chip: 'bg-red-100 text-red-700' }
+                  : null;
+                const expandable = stance && posText;
+                const isOpen = !!openIssues[issue.id];
                 return (
                   <div key={issue.id} className={`px-5 py-3 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : ''}`}>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${POS_DOT[pos] || 'bg-slate-300'}`} />
                       <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
                       {isMatch && <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">✓ Match</span>}
                       {isMismatch && <span className="ml-auto text-[10px] font-bold text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded-full">✗ Differs</span>}
                     </div>
-                    <p className={`text-sm leading-relaxed ${pos ? POS_COLOR[pos] : 'text-slate-400'} font-medium`}>
-                      {posText || <span className="text-slate-300 italic">Position not available</span>}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {stance ? (
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${stance.chip}`}>
+                          {stance.label}
+                          {expandable && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setOpenIssues(o => ({...o, [issue.id]: !o[issue.id]})); }}
+                              className={`w-4 h-4 rounded-full flex items-center justify-center leading-none font-black text-[10px] flex-shrink-0 transition-all ${isOpen ? 'border-2 border-slate-400 text-slate-400' : 'border-2 border-current opacity-50 hover:opacity-100'}`}
+                              title={isOpen ? 'Close definition' : 'What does this mean?'}
+                            >{isOpen ? '–' : 'i'}</button>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-[13px] text-slate-400 italic">No published position found</span>
+                      )}
+                    </div>
+                    {isOpen && expandable && (
+                      <p className="text-[13px] text-slate-500 italic leading-relaxed mt-2">
+                        <span className="font-semibold not-italic text-slate-400">The {stance.word} view: </span>
+                        "{posText}"
+                      </p>
+                    )}
+                    {evidence && (
+                      <p className="text-[13px] text-slate-600 leading-relaxed mt-2 pl-2.5 border-l-2 border-slate-300">{evidence}</p>
+                    )}
                   </div>
                 );
               })}
+            </div>
+            {/* Bottom add-to-ballot CTA */}
+            <div className={`px-5 py-4 ${accentBg} flex items-center justify-between gap-4`}>
+              <div>
+                <p className="text-white font-black text-base leading-tight">{candidate.name}</p>
+                <p className="text-white/70 text-xs">{raceName}</p>
+              </div>
+              <button
+                onClick={onSelect}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wide transition-all active:scale-95 ${isSelected ? 'bg-white text-slate-900' : 'bg-white/20 text-white border-2 border-white/50 hover:bg-white/30'}`}
+              >
+                {isSelected ? '✓ On Ballot' : '+ Add to Ballot'}
+              </button>
             </div>
           </div>
           </div>
