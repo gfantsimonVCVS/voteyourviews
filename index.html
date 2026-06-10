@@ -1276,12 +1276,12 @@
           <header className="flex items-center justify-center px-0 py-0 lg:py-5 border-b border-white/5">
 
             {/* Logo — color full-width on mobile, white fixed-height on desktop */}
-            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full h-auto block lg:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)'}} />
+            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full h-auto block md:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)'}} />
 
             {/* Desktop: logo + election info centered together as a unit */}
-            <div className="hidden lg:flex items-center gap-10 xl:gap-14">
+            <div className="hidden md:flex items-center gap-20 xl:gap-28">
               <img src="./icons/VoteYourViews_Logo_White.png" alt="VoteYourViews.org" className="h-[109px] w-auto shrink-0 -ml-[60px]" />
-              <div className="flex flex-col" style={{fontFamily:"'Barlow Condensed', sans-serif"}}>
+              <div className="flex flex-col" style={{fontFamily:"'Barlow Condensed', sans-serif", marginLeft:'30px'}}>
                 <p className="text-white font-black text-4xl xl:text-5xl tracking-tight leading-none">Texas Midterm Election</p>
                 <p className="flex items-center gap-3 mt-2">
                   <span className="text-red-400 font-bold text-base tracking-wide">Early Voting October 19 – 30</span>
