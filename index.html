@@ -3722,8 +3722,10 @@
     function App() {
       const [screen, setScreen] = useState(SHEETS.master ? 'loading' : 'landing');
       const [county, setCounty] = useState('hays');
-      const [answers, setAnswers] = useState(() => { try { return JSON.parse(sessionStorage.getItem('vyv_answers') || '{}'); } catch(e) { return {}; } });
-      const [ranks, setRanks] = useState(() => { try { return JSON.parse(sessionStorage.getItem('vyv_ranks') || '{}'); } catch(e) { return {}; } });
+      // ?persist=1 in URL uses localStorage (for testing); otherwise sessionStorage (clears on new visit)
+      const store = new URLSearchParams(window.location.search).get('persist') === '1' ? localStorage : sessionStorage;
+      const [answers, setAnswers] = useState(() => { try { return JSON.parse(store.getItem('vyv_answers') || '{}'); } catch(e) { return {}; } });
+      const [ranks, setRanks] = useState(() => { try { return JSON.parse(store.getItem('vyv_ranks') || '{}'); } catch(e) { return {}; } });
       const [selected, setSelected] = useState({});
       const [issues, setIssues] = useState(ISSUES);
       const [counties, setCounties] = useState(COUNTIES);
@@ -3732,9 +3734,9 @@
       const [userDistricts, setUserDistricts] = useState(null);
       const [pendingScreen, setPendingScreen] = useState('quiz');
 
-      // Persist answers + ranks to sessionStorage
-      React.useEffect(() => { try { sessionStorage.setItem('vyv_answers', JSON.stringify(answers)); } catch(e) {} }, [answers]);
-      React.useEffect(() => { try { sessionStorage.setItem('vyv_ranks', JSON.stringify(ranks)); } catch(e) {} }, [ranks]);
+      // Persist answers + ranks
+      React.useEffect(() => { try { store.setItem('vyv_answers', JSON.stringify(answers)); } catch(e) {} }, [answers]);
+      React.useEffect(() => { try { store.setItem('vyv_ranks', JSON.stringify(ranks)); } catch(e) {} }, [ranks]);
       const [startIssueId, setStartIssueId] = useState(null);
       const [returnToSummary, setReturnToSummary] = useState(false);
       const [returnToRace, setReturnToRace] = useState(null);   // { office } → go back to RaceDetail after quiz
@@ -3801,7 +3803,7 @@
             answers={answers}
             onQuiz={(id) => { setStartIssueId(id || null); setPendingScreen('landing'); setScreen('quiz'); }}
             onSummary={() => setScreen('summary')}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); sessionStorage.removeItem('vyv_answers'); sessionStorage.removeItem('vyv_ranks'); }}
+            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
             onBrowse={() => setScreen('browse')}
           />
         );
@@ -3852,7 +3854,7 @@
               else if (pendingScreen === 'summary') setScreen('summary');
               else setScreen('landing');
             }}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); sessionStorage.removeItem('vyv_answers'); sessionStorage.removeItem('vyv_ranks'); }}
+            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
           />
         );
       }
@@ -3869,7 +3871,7 @@
             onViewConstellation={() => setScreen('constellation')}
             onAnswerMore={(id) => { setStartIssueId(id); setPendingScreen('summary'); setScreen('quiz'); }}
             onHome={() => { setStartIssueId(null); setScreen('landing'); }}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); sessionStorage.removeItem('vyv_answers'); sessionStorage.removeItem('vyv_ranks'); }}
+            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
           />
         );
       }
@@ -3881,7 +3883,7 @@
             answers={answers}
             ranks={ranks}
             onContinue={() => goToAddress('results')}
-            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); sessionStorage.removeItem('vyv_answers'); sessionStorage.removeItem('vyv_ranks'); }}
+            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
           />
         );
       }
@@ -3897,7 +3899,7 @@
             setSelected={setSelected}
             userDistricts={userDistricts}
             onBallot={() => setScreen('ballot')}
-            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); sessionStorage.removeItem('vyv_answers'); sessionStorage.removeItem('vyv_ranks'); }}
+            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
             onBrowse={() => setScreen('browse')}
           />
         );
