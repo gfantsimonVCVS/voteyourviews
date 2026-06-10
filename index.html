@@ -2504,61 +2504,68 @@
       const accentBg = candidate.party === 'D' ? 'bg-blue-800' : candidate.party === 'R' ? 'bg-red-800' : 'bg-slate-800';
       return (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/60 lg:items-center lg:justify-center lg:p-8">
-          <div className="flex flex-col bg-white lg:rounded-2xl lg:shadow-2xl lg:max-w-3xl w-full lg:max-h-[90vh] overflow-hidden">
+          <div className="flex flex-col bg-white lg:rounded-2xl lg:shadow-2xl lg:max-w-4xl w-full lg:max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className={`${accentBg} px-6 pt-6 pb-5 relative flex-shrink-0`}>
+          <div className={`${accentBg} px-6 pt-6 pb-6 relative flex-shrink-0`}>
             <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center flex-shrink-0">
-                {onSelect ? (
-                  <button onClick={onSelect} className="relative active:scale-95 hover:scale-105 transition-transform" title={isSelected ? 'Remove from ballot' : 'Add to ballot'}>
-                    <div className={`w-20 h-20 lg:w-24 lg:h-24 rounded-full border-4 overflow-hidden bg-white/20 transition-colors ${isSelected ? (candidate.party === 'D' ? 'border-blue-200' : candidate.party === 'R' ? 'border-red-200' : 'border-slate-200') : 'border-white/50'}`}>
-                      <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name}
-                        className="w-full h-full object-cover object-top"
-                        onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
+
+            {/* Mobile: stacked / Desktop: two-column */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8">
+
+              {/* Left col: photo + party + name + website — fixed width on desktop */}
+              <div className="flex items-center gap-4 lg:flex-col lg:items-center lg:text-center lg:w-40 lg:flex-shrink-0">
+                {/* Photo + tap-to-add label stacked together */}
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  {onSelect ? (
+                    <button onClick={onSelect} className="relative active:scale-95 hover:scale-105 transition-transform" title={isSelected ? 'Remove from ballot' : 'Add to ballot'}>
+                      <div className={`w-20 h-20 lg:w-28 lg:h-28 rounded-full border-4 overflow-hidden bg-white/20 transition-colors ${isSelected ? (candidate.party === 'D' ? 'border-blue-200' : candidate.party === 'R' ? 'border-red-200' : 'border-slate-200') : 'border-white/50'}`}>
+                        <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
+                      </div>
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full flex items-center justify-center text-base font-black border-2 border-white shadow-md transition-colors ${isSelected ? (candidate.party === 'D' ? 'bg-blue-200 text-blue-900' : candidate.party === 'R' ? 'bg-red-200 text-red-900' : 'bg-slate-200 text-slate-900') : 'bg-white text-slate-900'}`}>
+                        {isSelected ? '✓' : '+'}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-full border-4 border-white/50 overflow-hidden bg-white/20">
+                      <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
                     </div>
-                    <span className={`absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full flex items-center justify-center text-base font-black border-2 border-white shadow-md transition-colors ${isSelected ? (candidate.party === 'D' ? 'bg-blue-200 text-blue-900' : candidate.party === 'R' ? 'bg-red-200 text-red-900' : 'bg-slate-200 text-slate-900') : 'bg-white text-slate-900'}`}>
-                      {isSelected ? '✓' : '+'}
-                    </span>
-                  </button>
-                ) : (
-                  <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full border-4 border-white/50 overflow-hidden bg-white/20">
-                    <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name}
-                      className="w-full h-full object-cover object-top"
-                      onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
-                  </div>
-                )}
-                {onSelect && (
-                  <span className={`text-[8px] font-bold uppercase tracking-widest mt-1.5 text-center leading-tight ${isSelected ? (candidate.party === 'D' ? 'text-blue-200' : candidate.party === 'R' ? 'text-red-200' : 'text-slate-200') : 'text-white/80'}`}>
-                    {isSelected ? '✓ On Ballot' : 'Tap to Add'}
-                  </span>
-                )}
-              </div>
-              <div>
-                <p className="text-white/70 text-xs lg:text-[13px] font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-white font-black text-2xl lg:text-3xl leading-tight">{candidate.name}</h2>
-                  <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer"
-                    className="text-white/70 hover:text-white transition-colors flex-shrink-0" title="Visit website">
-                    <svg className="w-6 h-6 lg:w-7 lg:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                    </svg>
+                  )}
+                  {onSelect && (
+                    <p className={`text-[9px] font-bold uppercase tracking-widest text-center ${isSelected ? (candidate.party === 'D' ? 'text-blue-200' : candidate.party === 'R' ? 'text-red-200' : 'text-slate-200') : 'text-white/70'}`}>
+                      {isSelected ? '✓ On Ballot' : 'Tap to Add'}
+                    </p>
+                  )}
+                </div>
+                {/* Name + party + website */}
+                <div>
+                  <p className="text-white/70 text-xs font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
+                  <h2 className="text-white font-black text-xl lg:text-2xl leading-tight">{candidate.name}</h2>
+                  <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5 text-white/60 hover:text-white transition-colors" title="Visit website">
+                    <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                   </a>
                 </div>
               </div>
+
+              {/* Divider — desktop only */}
+              <div className="hidden lg:block w-px self-stretch bg-white/20 flex-shrink-0" />
+
+              {/* Right col: hook + summary */}
+              <div className="flex-1 lg:py-2">
+                {candidate.hook && (
+                  <p className="text-white font-black mt-4 lg:mt-0 leading-snug" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'26px', letterSpacing:'0.01em'}}>
+                    {candidate.hook}
+                  </p>
+                )}
+                {candidate.summary && (
+                  <p className={`text-white/85 mt-2 leading-relaxed text-[15px] font-medium`}>{candidate.summary}</p>
+                )}
+              </div>
+
             </div>
-            {candidate.hook && (
-              <p className="text-white font-black mt-4 leading-snug" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'21px', letterSpacing:'0.01em'}}>
-                {candidate.hook}
-              </p>
-            )}
-            {candidate.summary && (
-              <p className={`text-white/80 mt-2 leading-relaxed ${candidate.hook ? 'text-[13px] lg:text-sm font-medium' : 'font-semibold cand-summary'}`}>{candidate.summary}</p>
-            )}
           </div>
           {/* Issue positions — 2 columns on desktop */}
           <div className="flex-1 overflow-y-auto">
-            <div className="lg:grid lg:grid-cols-2 divide-y divide-slate-100 lg:divide-y-0">
+            <div className="divide-y divide-slate-100 lg:divide-y-0 lg:columns-2">
               {issues && issues.map((issue, idx) => {
                 const pos = candidate.positions?.[issue.id];
                 const hasStance = pos === 'A' || pos === 'B' || pos === 'C';
@@ -2574,16 +2581,16 @@
                 const expandable = stance && posText;
                 const isOpen = !!openIssues[issue.id];
                 return (
-                  <div key={issue.id} className={`px-5 py-3 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : ''}`}>
+                  <div key={issue.id} className={`px-5 py-3 lg:py-4 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : ''}`}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${POS_DOT[pos] || 'bg-slate-300'}`} />
-                      <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
-                      {isMatch && <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">✓ Match</span>}
-                      {isMismatch && <span className="ml-auto text-[10px] font-bold text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded-full">✗ Differs</span>}
+                      <span className="text-[11px] lg:text-xs font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
+                      {isMatch && <span className="ml-auto text-[10px] lg:text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">✓ Match</span>}
+                      {isMismatch && <span className="ml-auto text-[10px] lg:text-xs font-bold text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded-full">✗ Differs</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       {stance ? (
-                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${stance.chip}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] lg:text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${stance.chip}`}>
                           {stance.label}
                           {expandable && (
                             <button
@@ -2594,17 +2601,17 @@
                           )}
                         </span>
                       ) : (
-                        <span className="text-[13px] text-slate-400 italic">No published position found</span>
+                        <span className="text-sm text-slate-400 italic">No published position found</span>
                       )}
                     </div>
                     {isOpen && expandable && (
-                      <p className="text-[13px] text-slate-500 italic leading-relaxed mt-2">
+                      <p className="text-sm text-slate-500 italic leading-relaxed mt-2">
                         <span className="font-semibold not-italic text-slate-400">The {stance.word} view: </span>
                         "{posText}"
                       </p>
                     )}
                     {evidence && (
-                      <p className="text-[13px] text-slate-600 leading-relaxed mt-2 pl-2.5 border-l-2 border-slate-300">{evidence}</p>
+                      <p className="text-sm text-slate-600 leading-relaxed mt-2 pl-2.5 border-l-2 border-slate-300">{evidence}</p>
                     )}
                   </div>
                 );
