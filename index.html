@@ -3652,10 +3652,8 @@
           </header>
 
           {/* Hero header — shows on screen AND prints */}
-          <div style={{background:'#fff', borderBottom:'4px solid #0f172a', padding:'16px 40px 14px'}}>
+          <div style={{background:'#fff', borderBottom:'4px solid #0f172a', padding:'10px 40px 10px'}}>
             <div style={{maxWidth:'900px', margin:'0 auto', textAlign:'center'}}>
-              {/* Top accent line */}
-              <div style={{width:'60px', height:'5px', background:'#2563eb', borderRadius:'3px', marginBottom:'12px', margin:'0 auto 12px'}} />
               <div style={{display:'flex', alignItems:'center', gap:'16px', flexWrap:'wrap', justifyContent:'center'}}>
                 <img src="./icons/VoteYourViews_Logo_Black.png" alt="VoteYourViews" style={{height:'52px', display:'block'}} />
                 <div className="font-black uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'40px', color:'#0f172a', letterSpacing:'0.04em', lineHeight:0.95}}>
@@ -3706,7 +3704,7 @@
               }).filter(Boolean);
               if (!sectionCandidates.length) return null;
               return (
-                <div key={sec.key} className="mb-4" style={{breakInside:'avoid', pageBreakInside:'avoid'}}>
+                <div key={sec.key} className="mb-4" style={sec.key === 'judicial' ? {pageBreakBefore:'always', breakBefore:'page'} : {}}>
                   <div className="flex items-center gap-3 mb-2 pb-1" style={{borderBottom:'2px solid #0f172a'}}>
                     <div className="font-black uppercase tracking-widest" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'15px', color:'#0f172a', letterSpacing:'0.1em'}}>{sec.label}</div>
                   </div>
