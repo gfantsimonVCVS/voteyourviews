@@ -42,64 +42,28 @@
     ✓ Suggestion submitted — thank you!
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
-    // ── Statement data (matches index.html exactly) ──────────────────────────
-    const ISSUE_STATEMENTS = {
-      'Reproductive Rights': [
-        "Forcing anyone, at any age — including victims of rape or incest — to give birth should NOT be Texas law.",
-        "The difficult decision to end a pregnancy in the first trimester should be between a woman and her doctor — not the government.",
-        "A doctor should not be prosecuted when a patient's life requires the termination of a pregnancy.",
-        "Whether you support abortion rights or oppose them, candidates should not be elected on this issue alone.",
-      ],
-      'Immigration & Border': [
-        "Texas taxpayers should not be forced to pay for the healthcare, education, and housing of people who entered this country illegally.",
-        "Every criminal illegal immigrant who should have been deported is a preventable crime against an American citizen.",
-        "If you want to live in America, get in line and do it legally — just like millions of others did.",
-        "The federal government has failed to secure the border, so Texas has every right to do it themselves.",
-      ],
-      'Gun Policy': [
-        "A gun owner should be able to buy and use a military-style weapon without government restriction.",
-        "Mass shootings aren't the responsibility of gun owners, but the responsibility of untreated mental illness.",
-        "It makes sense that an 18 year old can legally buy an AR-15 but cannot buy a handgun until they turn 21.",
-        "Texas should continue to reject Red Flag laws based on warning signs — until a crime is actually committed, no one should have their guns taken away.",
-      ],
-      'Public Education': [
-        "Tax dollars should not be used to pay for private school tuition — it takes money away from the public schools that serve the majority of Texas children.",
-        "Texas teachers earn thousands less than the national average — and every year we lose more of them because they can no longer afford to stay in the classroom.",
-        "It's unacceptable that Texas found $11 billion for border security and $1 billion for private school vouchers, but refuses to fully fund the public schools educating 5 million Texas children.",
-        "Our children's science education should not depend on whether their teacher puts biblical or political beliefs before scientific facts.",
-      ],
-      'Healthcare': [
-        "The government has no business getting between a patient and their doctor — and that includes forcing Americans into a one-size-fits-all healthcare system.",
-        "Expanding Medicaid in Texas means billions in new government spending and more dependency — not better care.",
-        "Free-market competition — not government programs — is what drives down costs and improves quality in healthcare, just like in every other industry.",
-        "Texas has the highest uninsured rate in the nation because Washington keeps blocking the market solutions that would actually make coverage affordable.",
-      ],
-      'Climate & Energy': [
-        "Texas's oil and gas industry supports millions of jobs and families — radical climate policies would destroy them overnight.",
-        "The federal government has no business telling Texas how to manage its energy industry.",
-        "Wind and solar sound great until the grid fails in February and people freeze to death — Texas needs reliable energy, not green experiments.",
-        "Climate change policies cost real Texans real money — higher energy bills, lost jobs, and a weaker economy — for problems we didn't create.",
-      ],
-      'Election Integrity': [
-        "Closing polling locations in minority neighborhoods and making lines longer is voter suppression — plain and simple.",
-        "Requiring a photo ID to vote sounds reasonable until you realize hundreds of thousands of eligible Texans don't have one and can't easily get one.",
-        "When Texas purges voter rolls and removes eligible voters weeks before an election, democracy is being rigged — just not in the way they claim.",
-        "Every eligible Texan should be able to vote without having to fight through obstacles designed to make it harder.",
-      ],
-      'Social Security & Medicare': [
-        "Texans spent their entire working lives paying into Social Security and Medicare — any politician who cuts those benefits is stealing from them.",
-        "Privatizing Social Security means gambling the retirement security of millions of Texans on the stock market.",
-        "4.7 million Texans depend on Social Security and Medicare — cutting these programs to pay for tax cuts for the wealthy is unacceptable.",
-        "No senior in Texas should have to choose between buying groceries and buying their medication.",
-      ],
-      'Housing & Affordability': [
-        "When a teacher, a nurse, or a firefighter can't afford to live in the community they serve, something is broken.",
-        "Texas home prices rose over 50% in three years — and wages didn't. That's not a market working, that's a crisis.",
-        "Corporate landlords buying up Texas homes and turning them into rentals is making it impossible for working families to ever own a home.",
-        "A family that has lived in their Texas community for generations should not be priced out of it by out-of-state investors.",
-      ],
-    };
+    const SHEET_ID = '1V1oaEy6ToV3LZt0et9bIWEJQbPrYZg73tDxGelhiFn8';
+
+    async function loadStatements() {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Statements`;
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const { data } = Papa.parse(text, { header: true, skipEmptyLines: true });
+        const built = {};
+        data.forEach(r => {
+          const issue = (r.issue || '').trim();
+          const text  = (r.text  || '').trim();
+          if (issue && text) {
+            if (!built[issue]) built[issue] = [];
+            built[issue].push(text);
+          }
+        });
+        return Object.keys(built).length > 0 ? built : null;
+      } catch (_) { return null; }
+    }
 
     // ── Google Form config ────────────────────────────────────────────────────
     // Replace FORM_ID and entry IDs after creating your Google Form
@@ -118,7 +82,12 @@
       const container = document.getElementById('statements-container');
       container.innerHTML = '';
 
-      Object.entries(ISSUE_STATEMENTS).forEach(([topic, stmts]) => {
+      if (!window.ISSUE_STATEMENTS) {
+        container.innerHTML = '<p class="text-red-400 text-sm">Could not load statements from sheet. Check that the Statements tab is published to web.</p>';
+        return;
+      }
+
+      Object.entries(window.ISSUE_STATEMENTS).forEach(([topic, stmts]) => {
         const section = document.createElement('div');
         section.className = 'mb-12';
 
@@ -239,7 +208,10 @@
       setTimeout(() => { toast.style.opacity = '0'; }, 3000);
     }
 
-    render();
+    loadStatements().then(data => {
+      window.ISSUE_STATEMENTS = data;
+      render();
+    });
   </script>
 </body>
 </html>

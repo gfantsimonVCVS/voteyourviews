@@ -1634,7 +1634,7 @@
     }
 
     // ─── ISSUE STATEMENTS (hardcoded, wired to sheet later) ───
-    const ISSUE_STATEMENTS = {
+    let ISSUE_STATEMENTS = {
       'Reproductive Rights': [
         "Forcing anyone, at any age — including victims of rape or incest — to give birth should NOT be Texas law.",
         "The difficult decision to end a pregnancy in the first trimester should be between a woman and her doctor — not the government.",
@@ -4238,10 +4238,23 @@
         setScreen('loading');
         setLoadError(null);
         try {
-          const [issueRows, statewideRows] = await Promise.all([
+          const [issueRows, statewideRows, stmtRows] = await Promise.all([
             fetchSheet(SHEETS.master, 'issues'),
             fetchSheet(SHEETS.master, 'statewide'),
+            fetchSheet(SHEETS.master, 'Statements').catch(() => []),
           ]);
+          if (stmtRows.length > 0) {
+            const built = {};
+            stmtRows.forEach(r => {
+              const issue = (r.issue || '').trim();
+              const text = (r.text || '').trim();
+              if (issue && text) {
+                if (!built[issue]) built[issue] = [];
+                built[issue].push(text);
+              }
+            });
+            if (Object.keys(built).length > 0) ISSUE_STATEMENTS = built;
+          }
           const rawIssues = buildIssues(issueRows);
           const builtIssues = [...GRID_ORDER.map(id => rawIssues.find(i => i.id === id)).filter(Boolean), ...rawIssues.filter(i => !GRID_ORDER.includes(i.id))];
           const statewideRaces = buildRaces(statewideRows);
