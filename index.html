@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Vote Your Views — Texas Voter Guide 2026</title>
   <meta name="description" content="Find Texas candidates who match your values — not just your party. Build a belief-based ballot or manually choose your candidates for November 2026.">
   <meta property="og:title" content="Vote Your Views — Texas Voter Guide 2026">
@@ -28,12 +28,15 @@
   <style>
     body { font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; max-width: 100vw; }
     html { overflow-x: hidden; }
+    body { padding-bottom: env(safe-area-inset-bottom); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .cand-summary { font-size: 16px; }
     @media (min-width: 1024px) { .cand-summary { font-size: 17px; } }
     .fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-in { animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1); }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     .patriot-pulse {
       animation: patriotPulse 2.8s ease-in-out infinite;
       border: 3px solid #3b82f6;
@@ -42,6 +45,37 @@
       0%   { background: #dc2626; border-color: #3b82f6; box-shadow: 0 0 14px rgba(220,38,38,0.5); }
       50%  { background: #2563eb; border-color: #dc2626; box-shadow: 0 0 14px rgba(37,99,235,0.5); }
       100% { background: #dc2626; border-color: #3b82f6; box-shadow: 0 0 14px rgba(220,38,38,0.5); }
+    }
+    input[type="range"].importance-slider::-webkit-slider-runnable-track {
+      background: transparent;
+      height: 8px;
+      border-radius: 9999px;
+    }
+    input[type="range"].importance-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--slider-color, #fff);
+      margin-top: -7px;
+      box-shadow: var(--slider-glow, 0 0 8px var(--slider-color, #fff)), 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: box-shadow 0.15s ease;
+    }
+    input[type="range"].importance-slider::-moz-range-track {
+      background: transparent;
+      height: 8px;
+      border-radius: 9999px;
+    }
+    input[type="range"].importance-slider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--slider-color, #fff);
+      border: none;
+      box-shadow: var(--slider-glow, 0 0 8px var(--slider-color, #fff)), 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: box-shadow 0.15s ease;
     }
     @page { margin: 0.4in 0.4in 0.4in 0.4in; }
 
@@ -391,18 +425,18 @@
         id: 'moneyInPolitics',
         icon: 'democracy',
         symbol: 'Money_Symbol',
-        topic: 'Money in Politics',
-        emphasis: 'money, corruption, and political influence',
-        question: 'On money, corruption, and political influence, I believe:',
-        A: 'Dark money and corporate PACs have corrupted our politics. We need strict campaign finance limits, full donor transparency, and an end to politicians being bought by special interests.',
-        shortA: 'Dark money and corporate PACs have corrupted politics — we need strict limits.',
-        B: "There's too much money influencing our politics — that's not a partisan opinion, it's what most Texans believe. I'd support full donor transparency and disclosure requirements as a starting point, even if I'm cautious about limiting political speech outright.",
-        shortB: 'Support full donor transparency; cautious about limiting political speech outright.',
-        C: 'Political donations are free speech. The problem isn\'t money in politics — it\'s government that\'s too big and too powerful to resist buying. Limit government, not speech.',
-        shortC: 'Political donations are free speech. Limit government power, not political spending.',
+        topic: 'Election Integrity',
+        emphasis: 'election integrity and voting rights',
+        question: 'On election integrity and voting rights, I believe:',
+        A: 'Every eligible Texan should be able to vote without barriers. Voter suppression — through ID requirements, polling place closures, and voter roll purges — is a real threat to democracy.',
+        shortA: 'Voter suppression is real — every eligible Texan deserves easy access to the ballot.',
+        B: "I believe in both secure elections and accessible voting — those goals aren't mutually exclusive. I want reasonable safeguards that don't make it harder for eligible voters to participate.",
+        shortB: 'Support both secure elections and accessible voting for all eligible Texans.',
+        C: 'Election integrity means ensuring only legal votes are counted. Voter ID, secure rolls, and strong oversight are common-sense safeguards, not suppression.',
+        shortC: 'Voter ID and secure rolls are common-sense safeguards for election integrity.',
         D: "This issue is important, but it won't decide my vote.",
-        fact: '74% of Americans — across both parties — say money in politics is a major national problem. Texas lawmakers received over $200M in PAC donations in the 2024 election cycle.',
-        hoverDesc: 'Texas lawmakers received over $200 million in PAC and special interest donations in the 2024 election cycle. The Ken Paxton era — including his impeachment and acquittal — spotlighted allegations of corruption and big-donor influence over state government. 74% of Americans across party lines say money in politics is a major national problem. Campaign finance reform advocates argue that full donor transparency is a minimal first step.',
+        fact: 'Texas has closed hundreds of polling locations since 2012, disproportionately in minority counties. In 2021, Texas passed SB 1, restricting mail-in voting and drive-through voting.',
+        hoverDesc: 'Texas has eliminated more polling places than any other state since the Supreme Court gutted the Voting Rights Act in 2013 — over 750 closures. SB 1 (2021) restricted 24-hour voting, drive-through voting, and made it harder to assist voters. Supporters say these are safeguards against fraud; critics call them voter suppression. Texas regularly purges voter rolls, sometimes removing eligible voters weeks before elections.',
       },
       {
         id: 'socialSecurity',
@@ -442,7 +476,7 @@
     // Row 1: reproductiveRights | education(TX) | immigration
     // Row 2: gunPolicy | democracy | healthcare(TX)
     // Row 3: climate(TX) | socialSecurity | affordability
-    const GRID_ORDER = ['reproductiveRights','education','immigration','gunPolicy','moneyInPolitics','healthcare','climate','socialSecurity','affordability'];
+    const GRID_ORDER = ['reproductiveRights','immigration','affordability','education','moneyInPolitics','healthcare','socialSecurity','gunPolicy','climate'];
     const ISSUES = GRID_ORDER.map(id => ISSUES_RAW.find(i => i.id === id)).filter(Boolean);
 
     // ─────────────────────────────────────────────
@@ -786,21 +820,59 @@
     // ─────────────────────────────────────────────
     // UTILITIES
     // ─────────────────────────────────────────────
-    function calcMatch(candidate, answers) {
-      // D = "doesn't drive my vote" — excluded from scoring entirely
+    // Voice direction: LEFT means agreeing = liberal (A), RIGHT means agreeing = conservative (C)
+    const ISSUE_VOICE = {
+      reproductiveRights: 'LEFT',
+      immigration:        'RIGHT',
+      affordability:      'LEFT',
+      education:          'LEFT',
+      moneyInPolitics:    'LEFT',
+      healthcare:         'RIGHT',
+      socialSecurity:     'LEFT',
+      gunPolicy:          'RIGHT',
+      climate:            'RIGHT',
+    };
+
+    function calcMatch(candidate, answers, checkedStatements, ranks) {
+      // New V2 scoring: use reactions if available, fall back to A/B/C
       const answered = Object.keys(answers).filter(id => answers[id] !== 'D');
       if (answered.length === 0) return null;
-      let score = 0;
+
+      let weightedScore = 0;
+      let weightedTotal = 0;
+
       answered.forEach(id => {
-        const userChoice = answers[id];
+        const importance = (ranks && ranks[id]) ? ranks[id] : 5;
+        const stmtData = checkedStatements && checkedStatements[id];
         const candPos = candidate.positions[id];
-        if (userChoice === 'B') {
-          score += 0.5; // moderate = half credit regardless of candidate position
-        } else if (userChoice === candPos) {
-          score += 1;
+
+        if (stmtData && stmtData.reactions) {
+          // V2: reactions-based scoring
+          const reactions = stmtData.reactions;
+          const total = Object.keys(reactions).length;
+          if (total === 0) return;
+          const agrees = Object.values(reactions).filter(r => r === 'up').length;
+          const disagrees = total - agrees;
+          const voice = ISSUE_VOICE[id] || 'LEFT';
+
+          // agreeRate for the A candidate, disagreeRate for the C candidate
+          const aRate = voice === 'LEFT' ? agrees / 4 : disagrees / 4;
+          const cRate = voice === 'RIGHT' ? agrees / 4 : disagrees / 4;
+          const voterRate = candPos === 'A' ? aRate : candPos === 'C' ? cRate : 0;
+
+          weightedScore += voterRate * importance;
+        } else {
+          // V1 fallback: A/B/C
+          const userChoice = answers[id];
+          let match = 0;
+          if (userChoice === candPos) match = 1;
+          weightedScore += match * importance;
         }
+        weightedTotal += importance;
       });
-      return Math.round((score / answered.length) * 100);
+
+      if (weightedTotal === 0) return null;
+      return Math.round((weightedScore / weightedTotal) * 100);
     }
 
     function matchedIssues(candidate, answers, issues) {
@@ -812,6 +884,27 @@
         userChoice: answers[issue.id],
         candidateChoice: candidate.positions[issue.id]
       })).filter(i => i.answered);
+    }
+
+    function formatOfficeLines(office) {
+      const parts = office
+        .replace(/\s*[—–]\s*/g, ',')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(s => s.replace(/\bPl\b/gi, 'Place').replace(/\bPct\b/gi, 'PCT'));
+      const result = [];
+      for (let i = 0; i < parts.length; i++) {
+        const cur = parts[i].toUpperCase();
+        const next = parts[i + 1] ? parts[i + 1].toUpperCase() : '';
+        if (cur.startsWith('PCT') && next.startsWith('PLACE')) {
+          result.push(parts[i] + ' · ' + parts[i + 1]);
+          i++;
+        } else {
+          result.push(parts[i]);
+        }
+      }
+      return result;
     }
 
     function getInitials(name) {
@@ -1540,231 +1633,325 @@
       );
     }
 
+    // ─── ISSUE STATEMENTS (hardcoded, wired to sheet later) ───
+    const ISSUE_STATEMENTS = {
+      'Reproductive Rights': [
+        "Forcing anyone, at any age — including victims of rape or incest — to give birth should NOT be Texas law.",
+        "The difficult decision to end a pregnancy in the first trimester should be between a woman and her doctor — not the government.",
+        "A doctor should not be prosecuted when a patient's life requires the termination of a pregnancy.",
+        "Whether you support abortion rights or oppose them, candidates should not be elected on this issue alone.",
+      ],
+      'Immigration & Border': [
+        "Texas taxpayers should not be forced to pay for the healthcare, education, and housing of people who entered this country illegally.",
+        "Every criminal illegal immigrant who should have been deported is a preventable crime against an American citizen.",
+        "If you want to live in America, get in line and do it legally — just like millions of others did.",
+        "The federal government has failed to secure the border, so Texas has every right to do it themselves.",
+      ],
+      'Gun Policy': [
+        "A gun owner should be able to buy and use a military-style weapon without government restriction.",
+        "Mass shootings aren't the responsibility of gun owners, but the responsibility of untreated mental illness.",
+        "It makes sense that an 18 year old can legally buy an AR-15 but cannot buy a handgun until they turn 21.",
+        "Texas should continue to reject Red Flag laws based on warning signs — until a crime is actually committed, no one should have their guns taken away.",
+      ],
+      'Public Education': [
+        "Tax dollars should not be used to pay for private school tuition — it takes money away from the public schools that serve the majority of Texas children.",
+        "Texas teachers earn thousands less than the national average — and every year we lose more of them because they can no longer afford to stay in the classroom.",
+        "It's unacceptable that Texas found $11 billion for border security and $1 billion for private school vouchers, but refuses to fully fund the public schools educating 5 million Texas children.",
+        "Our children's science education should not depend on whether their teacher puts biblical or political beliefs before scientific facts.",
+      ],
+      'Healthcare': [
+        "The government has no business getting between a patient and their doctor — and that includes forcing Americans into a one-size-fits-all healthcare system.",
+        "Expanding Medicaid in Texas means billions in new government spending and more dependency — not better care.",
+        "Free-market competition — not government programs — is what drives down costs and improves quality in healthcare, just like in every other industry.",
+        "Texas has the highest uninsured rate in the nation because Washington keeps blocking the market solutions that would actually make coverage affordable.",
+      ],
+      'Climate & Energy': [
+        "Texas's oil and gas industry supports millions of jobs and families — radical climate policies would destroy them overnight.",
+        "The federal government has no business telling Texas how to manage its energy industry.",
+        "Wind and solar sound great until the grid fails in February and people freeze to death — Texas needs reliable energy, not green experiments.",
+        "Climate change policies cost real Texans real money — higher energy bills, lost jobs, and a weaker economy — for problems we didn't create.",
+      ],
+      'Election Integrity': [
+        "Closing polling locations in minority neighborhoods and making lines longer is voter suppression — plain and simple.",
+        "Requiring a photo ID to vote sounds reasonable until you realize hundreds of thousands of eligible Texans don't have one and can't easily get one.",
+        "When Texas purges voter rolls and removes eligible voters weeks before an election, democracy is being rigged — just not in the way they claim.",
+        "Every eligible Texan should be able to vote without having to fight through obstacles designed to make it harder.",
+      ],
+      'Social Security & Medicare': [
+        "Texans spent their entire working lives paying into Social Security and Medicare — any politician who cuts those benefits is stealing from them.",
+        "Privatizing Social Security means gambling the retirement security of millions of Texans on the stock market.",
+        "4.7 million Texans depend on Social Security and Medicare — cutting these programs to pay for tax cuts for the wealthy is unacceptable.",
+        "No senior in Texas should have to choose between buying groceries and buying their medication.",
+      ],
+      'Housing & Affordability': [
+        "When a teacher, a nurse, or a firefighter can't afford to live in the community they serve, something is broken.",
+        "Texas home prices rose over 50% in three years — and wages didn't. That's not a market working, that's a crisis.",
+        "Corporate landlords buying up Texas homes and turning them into rentals is making it impossible for working families to ever own a home.",
+        "A family that has lived in their Texas community for generations should not be priced out of it by out-of-state investors.",
+      ],
+    };
+
     // ─── QUIZ ───
-    function Quiz({ onSave, onBack, onStartOver, issue, initialAnswer = null, initialRank = null }) {
-      const [selected, setSelected] = useState(initialAnswer);
-      const [expanded, setExpanded] = useState(initialAnswer);
+    function Quiz({ onSave, onBack, onStartOver, onHome, onSavePartial, issue, initialAnswer = null, initialRank = null, initialReactions = null }) {
+      // reactions[i] = 'up' | 'down' | undefined
+      const [reactions, setReactions] = useState(() => initialReactions || {});
       const [rank, setRank] = useState(initialRank);
-      const [browsingViews, setBrowsingViews] = useState(false);
-      const [showInfo, setShowInfo] = useState(false);
-      const [contextExpanded, setContextExpanded] = useState(false);
+      const [showContext, setShowContext] = useState(false);
+      const statements0 = ISSUE_STATEMENTS[(issue || {}).topic] || [];
+      const [cardIndex, setCardIndex] = useState(() => (initialReactions && Object.keys(initialReactions).length > 0) ? statements0.length : 0);
+      const [flash, setFlash] = useState(null); // 'up' | 'down' | null
 
       useEffect(() => { window.scrollTo(0, 0); }, []);
 
-      const RANK_RGB = { A: [59,130,246], B: [168,85,247], C: [239,68,68], D: [100,116,139] };
-      function pillColor(n) {
-        if (!selected) return null;
-        const [r, g, b] = RANK_RGB[selected] || [100,116,139];
-        const intensity = 0.2 + ((n - 1) / 9) * 0.8;
-        const mix = (channel) => Math.round(255 - intensity * (255 - channel));
-        return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+      if (!issue) return null;
+
+      const statements = ISSUE_STATEMENTS[issue.topic] || [];
+      const ACCENT = '#f59e0b';
+      const anyReacted = Object.keys(reactions).length > 0;
+
+      const allDone = cardIndex >= statements.length;
+
+      function react(dir) {
+        const i = cardIndex;
+        setFlash(dir);
+        setTimeout(() => {
+          setFlash(null);
+          setReactions(prev => ({ ...prev, [i]: dir }));
+          setCardIndex(i + 1);
+        }, 320);
       }
 
-      function handleSelect(choice) {
-        if (choice === 'D') {
-          onSave('D', 3);
-          return;
-        }
-        setBrowsingViews(false);
-        setSelected(choice);
-        // Don't auto-set rank — user must choose it explicitly
+      function skipCard() {
+        setCardIndex(cardIndex + 1);
+      }
+
+      function handleSkip() {
+        onSave('D', 3);
       }
 
       function handleSave() {
-        if (!selected) return;
-        onSave(selected, rank || (selected === 'D' ? 3 : 5));
+        if (!anyReacted) return;
+        const ups = Object.values(reactions).filter(r => r === 'up').length;
+        const score = ups / statements.length;
+        onSave('S', rank || 5, { reactions, score });
       }
-
-      if (!issue) return null;
-
-      const VIEW_COLOR_HEX = { A: '#3b82f6', B: '#a855f7', C: '#ef4444', D: '#64748b' };
-      const VIEW_COLOR_DARK = { A: '#1d4ed8', B: '#7e22ce', C: '#991b1b', D: '#334155' };
-      const selColor = VIEW_COLOR_HEX[selected] || '#64748b';
-      const selColorDark = VIEW_COLOR_DARK[selected] || '#334155';
 
       return (
         <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(160deg,#1e1b4b 0%,#0f172a 60%,#0c1a2e 100%)'}}>
           {/* Top nav */}
           <div className="border-b border-white/10 px-4 py-3 lg:py-4">
-            <div className="max-w-7xl mx-auto px-4 lg:px-16 flex items-center justify-between">
-              <button onClick={onBack} className="text-sm lg:text-base text-white font-black flex items-center gap-1 transition-colors hover:opacity-80 uppercase tracking-widest" style={{letterSpacing:'0.08em'}}>
+            <div className="max-w-3xl mx-auto px-4 lg:px-8 flex items-center justify-between">
+              <button onClick={() => {
+                if (onSavePartial && anyReacted) {
+                  const ups = Object.values(reactions).filter(r => r === 'up').length;
+                  const score = ups / statements.length;
+                  onSavePartial('S', rank || (allDone ? 5 : null), { reactions, score });
+                }
+                onBack();
+              }} className="text-sm text-white font-black hover:opacity-80 uppercase tracking-widest shrink-0" style={{letterSpacing:'0.08em'}}>
                 ← Back
               </button>
-              <div className="text-sm lg:text-base font-black text-white uppercase tracking-widest">{issue.topic}</div>
-              <button onClick={onStartOver} className="text-xs lg:text-sm text-slate-300 hover:text-red-400 font-black uppercase tracking-widest transition-colors" style={{letterSpacing:'0.08em'}}>
-                Start Over
+              <button onClick={() => {
+                if (onSavePartial && anyReacted) {
+                  const ups = Object.values(reactions).filter(r => r === 'up').length;
+                  const score = ups / statements.length;
+                  onSavePartial(allDone ? 'S' : 'S', rank || (allDone ? 5 : null), { reactions, score });
+                }
+                (onHome || onStartOver)();
+              }} className="w-8 h-8 flex items-center justify-center rounded-full hover:opacity-80 transition-all" style={{background:'rgba(255,255,255,0.1)'}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+                  <path d="M9 21V12h6v9"/>
+                </svg>
+              </button>
+              <button onClick={handleSave} disabled={!allDone}
+                className="text-sm font-black uppercase tracking-widest shrink-0 transition-all"
+                style={{letterSpacing:'0.08em', color: allDone ? '#fff' : 'rgba(255,255,255,0.25)'}}>
+                Next →
               </button>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 flex flex-col lg:flex-row lg:items-start max-w-7xl mx-auto w-full px-4 lg:px-16 py-6 lg:py-10 gap-6 lg:gap-20 fade-in">
-
-            {/* ── LEFT: Context card ── */}
-            <div className="lg:w-1/2 flex flex-col">
-              <div className="w-full rounded-2xl overflow-hidden flex flex-col" style={{background:'linear-gradient(160deg,rgba(99,102,241,0.18),rgba(255,255,255,0.07))', border:'1px solid rgba(255,255,255,0.28)', boxShadow:'0 0 40px rgba(99,102,241,0.12)'}}>
-                <div className="flex items-center gap-4 lg:gap-6 px-5 lg:px-8 pt-5 lg:pt-8 pb-3 lg:pb-5">
-                  <div className="shrink-0 w-14 h-14 lg:w-28 lg:h-28 rounded-2xl flex items-center justify-center overflow-hidden" style={{background:'rgba(255,255,255,0.10)', border:'1px solid rgba(255,255,255,0.15)'}}>
-                    <img
-                      src={`./icons/symbols/${issue.symbol}.png`}
-                      alt={issue.topic}
-                      style={{width:'80%', height:'80%', objectFit:'contain'}}
-                      onError={e => { e.target.style.display = 'none'; }}
-                    />
+          {/* Context modal */}
+          {showContext && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{background:'rgba(0,0,0,0.75)'}}>
+              <div className="w-full max-w-lg rounded-2xl p-6" style={{background:'linear-gradient(160deg,#1e1b4b,#0f172a)', border:'1px solid rgba(255,255,255,0.2)'}}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style={{background:'rgba(255,255,255,0.1)'}}>
+                    <img src={`./icons/symbols/${issue.symbol}.png`} alt={issue.topic} style={{width:'80%',height:'80%',objectFit:'contain'}} onError={e=>{e.target.style.display='none'}}/>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] lg:text-sm font-black text-indigo-300 uppercase tracking-[0.22em] mb-1">VoteYourViews</p>
-                    <p className="text-white font-black text-base lg:text-2xl uppercase tracking-wide leading-tight">{issue.topic}</p>
-                  </div>
+                  <p className="text-white font-black text-base uppercase tracking-wide">{issue.topic}</p>
                 </div>
-                {(issue.hoverDesc || issue.fact) && (
-                  <div className="px-5 lg:px-8 pb-5 lg:pb-6 flex-1">
-                    <p className={`text-slate-100 text-[15px] lg:text-[22px] leading-relaxed transition-all ${contextExpanded ? '' : 'lg:line-clamp-none line-clamp-3'}`}>
-                      {issue.hoverDesc || issue.fact}
-                    </p>
-                    <button
-                      onClick={() => setContextExpanded(x => !x)}
-                      className="lg:hidden mt-2 text-blue-400 hover:text-blue-300 text-[12px] font-bold tracking-wide transition-colors">
-                      {contextExpanded ? 'Show less ↑' : 'Read the full context ↓'}
-                    </button>
-                  </div>
-                )}
+                <p className="text-slate-200 text-[15px] leading-relaxed mb-6">{issue.hoverDesc || issue.fact}</p>
+                <button onClick={() => setShowContext(false)}
+                  className="w-full py-3 rounded-full font-black text-sm uppercase tracking-widest text-white transition-all hover:opacity-80"
+                  style={{background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)'}}>
+                  Got it
+                </button>
               </div>
             </div>
+          )}
 
-            {/* ── RIGHT: View choices ── */}
-            <div className="lg:w-1/2 flex flex-col">
-              <h2 className="text-xl lg:text-4xl font-bold text-white leading-snug mb-3 lg:mb-4">
-                For <span className="font-black break-words" style={{color: '#f59e0b'}}>{issue.topic.toUpperCase()}</span><span className="text-white">, <span className="italic font-black whitespace-nowrap">I believe...</span></span>
-              </h2>
+          {/* Flash overlay */}
+          {flash && (
+            <div className="fixed inset-0 z-40 pointer-events-none transition-opacity"
+              style={{background: flash === 'up' ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)'}} />
+          )}
 
-              {(() => {
-                const views = [
-                  { choice: 'A', viewLabel: 'Liberal View',      color: '#3b82f6', colorDark: '#1d4ed8' },
-                  { choice: 'B', viewLabel: 'Moderate View',     color: '#a855f7', colorDark: '#7e22ce' },
-                  { choice: 'C', viewLabel: 'Conservative View', color: '#ef4444', colorDark: '#991b1b' },
-                ];
-                if (selected && !browsingViews) {
-                  const v = views.find(v => v.choice === selected);
-                  return (
-                    <div className="w-full">
-                      {selected === 'D' ? (
-                        <div className="rounded-2xl px-5 py-4" style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)'}}>
-                          <p className="text-sm font-bold text-slate-300">✓ No Opinion on this issue</p>
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl overflow-hidden transition-all duration-500" style={{border:`2px solid ${rank ? v.color : v.color+'55'}`, boxShadow: rank ? `0 0 24px ${v.color}44` : 'none', opacity: rank ? 1 : 0.6}}>
-                          <div className="px-5 py-3 lg:py-4 flex items-center gap-2" style={{background:`linear-gradient(90deg,${v.colorDark},${v.color})`}}>
-                            <svg className="w-4 h-4 shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            <span className="font-black text-white text-sm lg:text-xl uppercase tracking-widest flex-1">{v.viewLabel}</span>
-                            <button onClick={() => { setBrowsingViews(true); setExpanded(selected); }}
-                              className="text-white/80 hover:text-white text-xs lg:text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all hover:bg-white/10"
-                              style={{border:'1.5px solid rgba(255,255,255,0.5)', letterSpacing:'0.1em'}}>
-                              ← Change
-                            </button>
-                          </div>
-                          <div className="px-5 lg:px-7 py-4 lg:py-6" style={{background:`linear-gradient(160deg,${v.color}22,${v.color}0a)`}}>
-                            <p className="text-white text-[15px] lg:text-[22px] leading-relaxed font-medium">{issue[selected]}</p>
-                          </div>
-                        </div>
-                      )}
+          {/* Card area */}
+          <div className="flex-1 flex flex-col items-center justify-between max-w-lg mx-auto w-full px-4 py-4 fade-in">
 
-                      {/* Rank gauge + stacked buttons — only after a view is chosen and not browsing */}
-                      {selected && selected !== 'D' && !browsingViews && (
-                        <div className="mt-3 flex flex-col gap-3 w-full">
-                          {/* Rank gauge — full width */}
-                          <div className="p-3 lg:p-5 rounded-2xl transition-all duration-300" style={{border: rank ? `2px solid ${selColor}66` : '2px solid rgba(251,191,36,0.7)', boxShadow: rank ? 'none' : '0 0 18px rgba(251,191,36,0.35)', background:`linear-gradient(160deg,${selColor}14,${selColor}06)`}}>
-                            <div className="flex items-center justify-between mb-3">
-                              <p className="text-xs lg:text-sm font-black text-slate-300 uppercase tracking-widest">How much does this drive your vote?</p>
-                              {rank && <span className="text-xs lg:text-sm font-black text-white">{rank}/10</span>}
-                            </div>
-                            <div className="flex gap-1 lg:gap-2">
-                              {Array.from({length: 10}, (_, i) => i + 1).map(n => {
-                                const filled = n <= (rank || 0);
-                                const intensity = filled ? (0.3 + (n / 10) * 0.7) : 1;
-                                return (
-                                  <button key={n} onClick={() => setRank(n)}
-                                    className="flex-1 h-2 lg:h-4 rounded-full transition-all duration-150 hover:opacity-90"
-                                    style={{ backgroundColor: filled ? selColor : 'rgba(255,255,255,0.18)', opacity: filled ? intensity : 1 }} />
-                                );
-                              })}
-                            </div>
-                            <div className="flex justify-between mt-2">
-                              <span className="text-[10px] lg:text-xs font-bold text-slate-300">Less important</span>
-                              <span className="text-[10px] lg:text-xs font-bold text-slate-300">Most important</span>
-                            </div>
-                          </div>
-                          {/* ADD VIEW — standalone */}
-                          {rank && (
-                            <div className="text-center">
-                              <button onClick={handleSave}
-                                className="text-xs lg:text-sm font-black px-10 lg:px-16 py-2.5 lg:py-4 rounded-full uppercase tracking-widest transition-all hover:opacity-90"
-                                style={{background:`linear-gradient(90deg,${selColorDark},${selColor})`, letterSpacing:'0.12em', color:'#fff'}}>
-                                Add Your View →
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {selected === 'D' && (
-                        <div className="mt-3 text-center">
-                          <button onClick={handleSave}
-                            className="text-xs lg:text-sm font-black px-8 lg:px-12 py-2 lg:py-3 rounded-full uppercase tracking-widest hover:opacity-90 transition-all"
-                            style={{background:'#1e293b', border:'1px solid rgba(255,255,255,0.2)', letterSpacing:'0.12em', color:'#fff'}}>
-                            Add Your View →
-                          </button>
-                        </div>
+            {!allDone ? (
+              <>
+                {/* Issue header — icon + title */}
+                <div className="w-full flex items-center gap-4 px-1 py-3">
+                  <img src={`./icons/symbols/${issue.symbol}.png`} alt={issue.topic}
+                    style={{width:'56px', height:'56px', objectFit:'contain', flexShrink:0}}
+                    onError={e => { e.target.style.display='none'; }} />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5" style={{color:'rgba(255,255,255,0.4)'}}>Views on</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-black uppercase leading-tight text-[20px] lg:text-[26px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.04em'}}>{issue.topic}</p>
+                      {(issue.hoverDesc || issue.fact) && (
+                        <button onClick={() => setShowContext(true)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all hover:opacity-80 shrink-0"
+                          style={{background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.25)'}}>
+                          i
+                        </button>
                       )}
                     </div>
-                  );
-                }
-                return (
-                  <div className="flex flex-col gap-2 mb-4">
-                    {views.map(({ choice, viewLabel, color, colorDark }) => {
-                      const isOpen = expanded === choice;
-                      return (
-                        <div key={choice} className="rounded-2xl overflow-hidden transition-all duration-200"
-                          style={{border:`1px solid ${isOpen ? color : color+'55'}`, boxShadow: isOpen ? `0 0 16px ${color}33` : 'none'}}>
-                          <button onClick={() => setExpanded(isOpen ? null : choice)}
-                            className="w-full flex items-center justify-between px-4 lg:px-6 py-3.5 lg:py-5 transition-colors"
-                            style={{background: isOpen ? `linear-gradient(90deg,${colorDark},${color})` : 'rgba(255,255,255,0.04)'}}>
-                            <span className="font-black text-sm lg:text-xl uppercase tracking-widest" style={{color: isOpen ? '#fff' : color}}>{viewLabel}</span>
-                            <svg className={`w-4 h-4 lg:w-5 lg:h-5 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-white' : ''}`} style={{color: isOpen ? '#fff' : color}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                          {isOpen && (
-                            <div className="px-5 lg:px-7 pt-4 lg:pt-6 pb-5 lg:pb-7" style={{background:`linear-gradient(160deg,${color}1a,${color}08)`}}>
-                              <p className="text-white text-[14px] lg:text-[22px] leading-relaxed font-medium mb-4 lg:mb-6">{issue[choice]}</p>
-                              {choice === selected ? (
-                                <div className="flex justify-center">
-                                  <span className="text-xs lg:text-sm font-black uppercase tracking-widest px-6 py-2 rounded-full" style={{color, border:`1.5px solid ${color}`, opacity:0.7}}>✓ Your current view</span>
-                                </div>
-                              ) : (
-                                <div className="flex justify-center">
-                                  <button onClick={() => handleSelect(choice)}
-                                    className="px-8 lg:px-12 py-2.5 lg:py-4 rounded-full text-xs lg:text-sm font-black text-white uppercase tracking-widest hover:opacity-90 transition-opacity"
-                                    style={{background:`linear-gradient(90deg,${colorDark},${color})`}}>
-                                    This is my view →
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    <button onClick={() => handleSelect('D')}
-                      className="w-full text-center py-3 rounded-2xl text-xs font-black text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors"
-                      style={{border:'1px dashed rgba(255,255,255,0.15)'}}>
-                      No Opinion on this issue
-                    </button>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
+
+                {/* Accordion statements */}
+                <div className="w-full flex flex-col gap-2 flex-1 py-2">
+                  {statements.map((stmt, i) => {
+                    const r = reactions[i];
+                    const isOpen = i === cardIndex;
+                    const isDone = r !== undefined;
+                    return (
+                      <div key={i} onClick={() => !isOpen && setCardIndex(i)}
+                        className="w-full rounded-2xl overflow-hidden transition-all duration-300"
+                        style={{
+                          border: isOpen ? '1.5px solid rgba(255,255,255,0.25)' : '1.5px solid rgba(255,255,255,0.08)',
+                          background: isOpen ? 'linear-gradient(160deg,rgba(99,102,241,0.2),rgba(255,255,255,0.06))' : 'rgba(255,255,255,0.03)',
+                          cursor: isOpen ? 'default' : 'pointer',
+                        }}>
+                        {/* Row header — always visible */}
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-black"
+                            style={{
+                              background: r === 'up' ? '#22c55e' : r === 'down' ? '#ef4444' : isOpen ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)',
+                              color: isDone ? '#fff' : isOpen ? '#f59e0b' : 'rgba(255,255,255,0.4)',
+                              border: isOpen && !isDone ? '1.5px solid #f59e0b' : 'none',
+                            }}>
+                            {r === 'up' ? '✓' : r === 'down' ? '✕' : i + 1}
+                          </div>
+                          <p className="text-xs font-bold uppercase tracking-widest"
+                            style={{color: isOpen ? 'rgba(255,255,255,0.5)' : isDone ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.25)'}}>
+                            {isOpen ? `Statement ${i + 1}` : isDone ? (r === 'up' ? 'Agreed' : 'Disagreed') : `Statement ${i + 1}`}
+                          </p>
+                        </div>
+
+                        {/* Expanded content */}
+                        {isOpen && (
+                          <div key={cardIndex} className="px-4 pb-4 slide-in">
+                            <p className="text-white font-medium leading-snug text-[16px] lg:text-[18px] mb-4">
+                              "{stmt.split(/\b([A-Z]{2,})\b/).map((part, pi) =>
+                                /^[A-Z]{2,}$/.test(part) ? <strong key={pi}>{part}</strong> : part
+                              )}"
+                            </p>
+                            {cardIndex > 0 && (
+                              <button onClick={() => setCardIndex(cardIndex - 1)}
+                                className="mb-3 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all"
+                                style={{color:'rgba(255,255,255,0.4)'}}>
+                                ← Change previous answer
+                              </button>
+                            )}
+                            <div className="flex gap-2 justify-center">
+                              <button onClick={() => react('up')} className="transition-all hover:opacity-90 active:scale-95" style={{width:'42.5%'}}>
+                                <img src="./icons/agree.png" alt="Agree" className="w-full" style={{maxHeight:'51px', objectFit:'contain'}} />
+                              </button>
+                              <button onClick={() => react('down')} className="transition-all hover:opacity-90 active:scale-95" style={{width:'42.5%'}}>
+                                <img src="./icons/disagree.png" alt="Disagree" className="w-full" style={{maxHeight:'51px', objectFit:'contain'}} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Skip issue */}
+                <button onClick={handleSkip}
+                  className="mb-8 w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-80 active:scale-95"
+                  style={{color:'rgba(255,255,255,0.85)', border:'1px solid rgba(255,255,255,0.5)', letterSpacing:'0.1em'}}>
+                  This issue doesn't affect my vote
+                </button>
+              </>
+            ) : (
+              /* All 4 done — show slider + next */
+              <div className="w-full flex flex-col gap-3 py-2 fade-in">
+                {/* Issue header */}
+                <div className="w-full flex items-center gap-4 px-1 pb-1">
+                  <img src={`./icons/symbols/${issue.symbol}.png`} alt={issue.topic}
+                    style={{width:'56px', height:'56px', objectFit:'contain', flexShrink:0}}
+                    onError={e => { e.target.style.display='none'; }} />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5" style={{color:'rgba(255,255,255,0.4)'}}>Views on</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-black uppercase leading-tight text-[20px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.04em'}}>{issue.topic}</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Summary of reactions */}
+                <div className="flex flex-col gap-1 mb-1">
+                  {statements.map((stmt, i) => {
+                    const r = reactions[i];
+                    if (!r) return null;
+                    return (
+                      <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl"
+                        style={{background: r === 'up' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}}>
+                        <img src={r === 'up' ? './icons/thumbs_up.png' : './icons/thumbs_down.png'} alt={r === 'up' ? 'Agree' : 'Disagree'} style={{width:'20px', height:'20px', objectFit:'contain', flexShrink:0, marginTop:'1px'}} />
+                        <p className="text-[12px] leading-snug" style={{color:'rgba(255,255,255,0.7)'}}>{stmt}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Slider */}
+                <div className="p-4 rounded-2xl" style={{border:`2px solid ${ACCENT}`, background:`linear-gradient(160deg,${ACCENT}0e,${ACCENT}04)`}}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-wider leading-tight">How important is this issue<br/>to your vote?</p>
+                    <span className="text-sm font-black shrink-0 ml-2" style={{color: rank ? ACCENT : 'rgba(255,255,255,0.2)', minWidth:'36px', textAlign:'right'}}>{rank ? `${rank}/10` : '–'}</span>
+                  </div>
+                  <div className="relative py-2">
+                    <div className="absolute inset-y-0 flex items-center w-full pointer-events-none">
+                      <div className="w-full rounded-full" style={{height:'8px', background: rank ? `linear-gradient(to right,${ACCENT}22 0%,${ACCENT} ${(rank-1)/9*100}%,rgba(255,255,255,0.12) ${(rank-1)/9*100}%,rgba(255,255,255,0.12) 100%)` : 'rgba(255,255,255,0.12)'}}/>
+                    </div>
+                    <input type="range" min="1" max="10" step="1"
+                      value={rank || 5}
+                      onChange={e => setRank(Number(e.target.value))}
+                      className="relative w-full appearance-none cursor-pointer importance-slider"
+                      style={{'--slider-color':ACCENT,'--slider-glow':rank?`0 0 ${4+(rank-1)*3}px ${2+(rank-1)*2}px ${ACCENT}`:'none',outline:'none',border:'none',background:'transparent',zIndex:1}}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    <span className="text-[10px] font-bold text-slate-300">Less important</span>
+                    <span className="text-[10px] font-bold text-slate-300">Most important</span>
+                  </div>
+                </div>
+
+                {rank && (
+                  <button onClick={handleSave}
+                    className="w-full py-4 rounded-full text-sm font-black text-white uppercase tracking-widest transition-all hover:opacity-90"
+                    style={{background:`linear-gradient(90deg,#b45309,${ACCENT})`, letterSpacing:'0.12em'}}>
+                    Next Issue →
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -2256,110 +2443,155 @@
       });
     }
 
-    function Results({ county, counties, issues, answers, selected, setSelected, userDistricts, onBallot, onRetake, onBrowse }) {
+    function Results({ county, counties, issues, answers, ranks, checkedStatements, selected, setSelected, userDistricts, onBallot, onRetake, onBrowse, onCompare }) {
       const countyData = counties[county];
-      const allRaces = RACE_SECTIONS.flatMap(s => filterRacesByDistrict(countyData[s.key] || [], userDistricts));
-      const [expandedRace, setExpandedRace] = useState(null);
+      const [profileData, setProfileData] = React.useState(null); // { candidate, race }
+      const [compareRace, setCompareRace] = React.useState(null); // race object for RaceDetail overlay
 
-      // Auto-select best-matching candidate for each race
-      useEffect(() => {
-        const autoSelected = {};
-        allRaces.forEach(race => {
-          const [c1, c2] = race.candidates.filter(Boolean);
-          if (!c1) return;
-          const s1 = calcMatch(c1, answers);
-          const s2 = c2 ? calcMatch(c2, answers) : null;
-          if (s1 !== null) {
-            autoSelected[race.office] = (s2 !== null && s2 > s1) ? c2.name : c1.name;
-          }
-        });
-        setSelected(prev => ({ ...autoSelected, ...prev }));
-      }, []);
-
-      const answeredCount = Object.keys(answers).length;
+      const answeredCount = Object.keys(answers).filter(id => answers[id] !== 'D').length;
 
       return (
-        <div className="min-h-screen bg-slate-50">
-          <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10">
-            <div className="max-w-3xl mx-auto flex items-center justify-between">
-              <button onClick={onRetake} className="text-sm text-slate-500 hover:text-slate-800 font-medium">← Start Over</button>
-              <img src="./icons/VoteYourViews_Logo_Color.png" alt="VoteYourViews.org" className="h-8 w-auto" />
-              <button
-                onClick={onBallot}
-                className="text-sm bg-slate-900 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-1.5"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Print Ballot
-              </button>
-            </div>
-          </header>
+        <React.Fragment>
+        <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(160deg,#1e1b4b 0%,#0f172a 60%,#0c1a2e 100%)'}}>
+          {/* Nav */}
+          <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-10" style={{background:'rgba(15,23,42,0.95)'}}>
+            <button onClick={onRetake} className="text-sm text-white font-black hover:opacity-80 uppercase tracking-widest" style={{letterSpacing:'0.08em'}}>← Back</button>
+            <span className="text-xs font-black text-white uppercase tracking-widest">Your Matches</span>
+            <button onClick={onBallot} className="text-xs font-black text-white uppercase tracking-widest px-3 py-1.5 rounded-full hover:opacity-80" style={{background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)'}}>Print →</button>
+          </div>
 
-          <main className="max-w-3xl mx-auto px-4 py-10">
-            <div className="mb-8 fade-in">
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Your belief matches</h1>
-              <p className="text-slate-500 text-sm">
-                Based on your {answeredCount} answers, here's how candidates align with your values. We auto-selected your best match — you can override any race.
-              </p>
-              {userDistricts && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {userDistricts.congressionalDistrict && <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 font-medium">US House: Dist. {userDistricts.congressionalDistrict}</span>}
-                  {userDistricts.stateSenate && <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 font-medium">TX Senate: Dist. {userDistricts.stateSenate}</span>}
-                  {userDistricts.stateHouse && <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 font-medium">TX House: Dist. {userDistricts.stateHouse}</span>}
-                  {userDistricts.jpPrecinct && <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 font-medium">JP Pct {userDistricts.jpPrecinct}</span>}
-                  {userDistricts.commissionerPrecinct && <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 font-medium">Comm. Pct {userDistricts.commissionerPrecinct}</span>}
-                </div>
-              )}
-            </div>
+          <div className="flex-1 max-w-lg mx-auto w-full px-4 py-4">
 
             {RACE_SECTIONS.filter(sec => filterRacesByDistrict(countyData[sec.key] || [], userDistricts).length > 0).map((sec, idx) => (
-              <div key={sec.key} className={idx > 0 ? 'mt-8 mb-2' : 'mb-2'}>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">{sec.label}</div>
-                <div className="space-y-3">
-                  {filterRacesByDistrict(countyData[sec.key] || [], userDistricts).map(race => (
-                    <RaceResultCard
-                      key={race.office}
-                      race={race}
-                      answers={answers}
-                      issues={issues}
-                      selected={selected}
-                      onSelect={(office, name) => setSelected(prev => ({ ...prev, [office]: name }))}
-                      expanded={expandedRace === race.office}
-                      onToggle={() => setExpandedRace(e => e === race.office ? null : race.office)}
-                    />
-                  ))}
+              <div key={sec.key} className={idx > 0 ? 'mt-6' : ''}>
+                <p className="text-[13px] font-black uppercase tracking-[0.2em] mb-2 px-1" style={{color:'rgba(255,255,255,0.65)'}}>{sec.label}</p>
+                <div className="flex flex-col gap-2">
+                  {filterRacesByDistrict(countyData[sec.key] || [], userDistricts).map(race => {
+                    const cands = race.candidates.filter(Boolean);
+                    const scores = cands.map(c => ({ c, s: calcMatch(c, answers, checkedStatements, ranks) }));
+                    const best = scores.reduce((a, b) => (b.s !== null && (a.s === null || b.s > a.s)) ? b : a, scores[0]);
+                    const match = best ? best.s : null;
+                    const cand = best ? best.c : null;
+                    if (!cand) return null;
+                    const isOverridden = selected[race.office] && selected[race.office] !== cand.name;
+                    const displayCand = isOverridden ? cands.find(c => c.name === selected[race.office]) : cand;
+                    const displayScore = displayCand ? calcMatch(displayCand, answers, checkedStatements, ranks) : match;
+                    const partyColor = displayCand?.party === 'R' ? '#ef4444' : displayCand?.party === 'D' ? '#3b82f6' : '#a855f7';
+                    const ISSUE_KEYS = ['reproductiveRights','immigration','gunPolicy','education','healthcare','climate','moneyInPolitics','socialSecurity','affordability'];
+                    const isJudicialRace = race.category === 'judicial' || (displayCand && !ISSUE_KEYS.some(k => displayCand.positions?.[k] && displayCand.positions[k] !== 'D'));
+
+                    return (
+                      <button key={race.office} onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
+                        className="w-full text-left rounded-2xl p-3 flex items-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
+                        style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}>
+                        {/* Photo */}
+                        <div className="shrink-0 w-14 h-14 rounded-full overflow-hidden" style={{border:`2px solid ${partyColor}`}}>
+                          {displayCand?.photo
+                            ? <img src={displayCand.photo} alt={displayCand.name} className="w-full h-full object-cover" style={{objectPosition:'center 5%'}} onError={e => e.target.style.display='none'} />
+                            : <div className="w-full h-full flex items-center justify-center text-white font-black text-lg" style={{background: partyColor + '33'}}>{getInitials(displayCand?.name || '')}</div>
+                          }
+                        </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-0.5 leading-tight" style={{color:'rgba(255,255,255,0.35)'}}>
+                            {formatOfficeLines(race.office).map((line, i) => (
+                              <span key={i} className="block whitespace-nowrap">{line}</span>
+                            ))}
+                          </p>
+                          <p className="text-white font-black text-base leading-tight">{displayCand?.name}</p>
+                          <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
+                            style={{background: partyColor + '28', color: partyColor, border: `1px solid ${partyColor}55`}}>
+                            {displayCand?.party === 'D' ? 'Democrat' : displayCand?.party === 'R' ? 'Republican' : 'Independent'}
+                          </span>
+                        </div>
+                        {/* Match % */}
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          {isJudicialRace ? (
+                            <span className="text-[10px] font-black uppercase tracking-wide text-center leading-tight" style={{color:'rgba(255,255,255,0.4)'}}>Party<br/>Aligned</span>
+                          ) : displayScore !== null ? (
+                            <>
+                              <span className="text-2xl font-black leading-none" style={{color: displayScore >= 70 ? '#22c55e' : displayScore >= 40 ? '#f59e0b' : '#ef4444'}}>{displayScore}%</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest" style={{color:'rgba(255,255,255,0.3)'}}>match</span>
+                            </>
+                          ) : (
+                            <span className="text-xs font-black" style={{color:'rgba(255,255,255,0.2)'}}>—</span>
+                          )}
+                        </div>
+                        {/* View profile CTA */}
+                        <div className="shrink-0 flex flex-col items-center justify-center w-8 h-8 rounded-full" style={{background:'rgba(255,255,255,0.1)'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 18l6-6-6-6"/>
+                          </svg>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
 
-            <div className="mt-10 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={onBallot}
-                className="flex-1 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-700 transition-colors text-sm flex items-center justify-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Print My Ballot
-              </button>
-              <button
-                onClick={onBrowse}
-                className="flex-1 py-4 border-2 border-slate-300 text-slate-700 font-bold rounded-xl hover:border-slate-400 transition-colors text-sm"
-              >
-                Browse All Candidates
-              </button>
-            </div>
-          </main>
+            <button onClick={onBallot}
+              className="mt-8 mb-8 w-full py-4 rounded-full text-sm font-black text-white uppercase tracking-widest transition-all hover:opacity-90"
+              style={{background:'linear-gradient(90deg,#1d4ed8,#7c3aed)', letterSpacing:'0.12em'}}>
+              Print My Ballot →
+            </button>
+          </div>
         </div>
+
+        {/* Race compare overlay */}
+        {compareRace && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
+            <RaceDetail
+              race={compareRace}
+              issues={issues}
+              answers={answers}
+              ranks={ranks}
+              checkedStatements={checkedStatements}
+              selected={selected}
+              onSelect={(office, name) => setSelected(prev => name ? {...prev, [office]: name} : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== office)))}
+              onBack={() => setCompareRace(null)}
+              onNextRace={null}
+              onPrevRace={null}
+              onQuiz={null}
+              onHome={() => setCompareRace(null)}
+              inline={false}
+            />
+          </div>
+        )}
+
+        {/* Candidate profile modal */}
+        {profileData && (
+          <CandidateProfile
+            candidate={profileData.candidate}
+            issues={issues}
+            answers={answers}
+            checkedStatements={checkedStatements}
+            ranks={ranks}
+            raceName={profileData.race.office}
+            raceCategory={profileData.race.category}
+            isSelected={selected[profileData.race.office] === profileData.candidate.name || (!selected[profileData.race.office] && !!profileData.isBest)}
+            onSelect={() => {
+              const office = profileData.race.office;
+              const name = profileData.candidate.name;
+              setSelected(prev => prev[office] === name ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== office)) : { ...prev, [office]: name });
+            }}
+            isOpponent={!profileData.isBest}
+            onClose={() => setProfileData(null)}
+            onCompare={profileData.race.candidates.find(c => c && c.name !== profileData.candidate.name) ? () => {
+              const opponent = profileData.race.candidates.find(c => c && c.name !== profileData.candidate.name);
+              setProfileData({ candidate: opponent, race: profileData.race, isBest: !profileData.isBest });
+            } : undefined}
+          />
+        )}
+        </React.Fragment>
       );
     }
 
-    function RaceResultCard({ race, answers, issues, selected, onSelect, expanded, onToggle }) {
+    function RaceResultCard({ race, answers, ranks, checkedStatements, issues, selected, onSelect, expanded, onToggle }) {
       const candidates = race.candidates.filter(Boolean);
       const [c1, c2] = candidates;
-      const s1 = calcMatch(c1, answers);
-      const s2 = c2 ? calcMatch(c2, answers) : null;
+      const s1 = calcMatch(c1, answers, checkedStatements, ranks);
+      const s2 = c2 ? calcMatch(c2, answers, checkedStatements, ranks) : null;
       const recommended = (s1 !== null && s2 !== null) ? (s1 >= s2 ? c1.name : c2.name) : null;
       const currentSelected = selected[race.office];
 
@@ -2394,7 +2626,7 @@
               <p className="text-xs text-slate-500 mb-4">{race.description}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {candidates.map(candidate => {
-                  const score = calcMatch(candidate, answers);
+                  const score = calcMatch(candidate, answers, checkedStatements, ranks);
                   const isSelected = currentSelected === candidate.name;
                   const isRecommended = recommended === candidate.name;
                   const matched = matchedIssues(candidate, answers, issues);
@@ -2524,7 +2756,7 @@
             <div className="px-5 py-4 overflow-y-auto max-h-[70vh] space-y-4 text-sm text-slate-600 leading-relaxed">
               <p><span className="font-bold text-slate-800">Voting records</span> — For candidates currently serving in the Texas Legislature or U.S. Congress, positions are based on how they voted on specific bills. Sources include <a href="https://capitol.texas.gov" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Texas Legislature Online</a>, <a href="https://www.texastribune.org" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Texas Tribune</a>, and <a href="https://justfacts.votesmart.org" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">VoteSmart</a>.</p>
               <p><span className="font-bold text-slate-800">Campaign platforms</span> — For first-time candidates with no voting record, positions are drawn from their published campaign platforms and public statements. These are labeled <span className="italic">[Campaign platform]</span> in the evidence. Self-reported positions are not independently verified.</p>
-              <p><span className="font-bold text-slate-800">Judicial candidates</span> — Judges are bound by professional ethics rules that prohibit them from taking public positions on policy issues. For judicial races, party affiliation and judicial appointment background are the primary signals available to voters.</p>
+              <p><span className="font-bold text-slate-800">Judicial candidates</span> — Judicial ethics rules prohibit judges from taking public positions on policy issues. These candidates have filed under a party affiliation.</p>
               <p><span className="font-bold text-slate-800">Administrative offices</span> — County clerks, treasurers, and similar administrative officials do not set policy on the issues listed. Position data is not applicable for these roles.</p>
               <p><span className="font-bold text-slate-800">Additional sources</span> — <a href="https://ballotpedia.org" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Ballotpedia</a> was used for biographical information and election data. Candidate websites were used for platform statements.</p>
               <p className="text-slate-400 text-xs pt-1 border-t border-slate-100">VoteYourViews.org is a nonpartisan voter education project. We do not endorse any candidate or party. If you find an error, email <a href="mailto:gina@fantsimon.com" className="text-blue-600 underline">gina@fantsimon.com</a>.</p>
@@ -2534,85 +2766,154 @@
       );
     }
 
-    function CandidateProfile({ candidate, issues, answers, onClose, onSelect, isSelected, raceName }) {
+    function CandidateProfile({ candidate, issues, answers, checkedStatements, ranks, onClose, onSelect, isSelected, raceName, raceCategory, onCompare, isOpponent }) {
+      const _cs = checkedStatements || {};
       const hasAnswers = answers && Object.keys(answers).length > 0;
       const [openIssues, setOpenIssues] = useState({});
       const [showSources, setShowSources] = useState(false);
+      const [hookCollapsed, setHookCollapsed] = useState(false);
       const border = candidate.party === 'D' ? 'border-blue-500' : candidate.party === 'R' ? 'border-red-500' : 'border-slate-300';
       const accentBg = candidate.party === 'D' ? 'bg-blue-800' : candidate.party === 'R' ? 'bg-red-800' : 'bg-slate-800';
+      const matchScore = hasAnswers ? calcMatch(candidate, answers, _cs, ranks || {}) : null;
+      const _ISSUE_KEYS = ['reproductiveRights','immigration','gunPolicy','education','healthcare','climate','moneyInPolitics','socialSecurity','affordability'];
+      const isJudicialCandidate = raceCategory === 'judicial' || !_ISSUE_KEYS.some(k => candidate.positions?.[k] && candidate.positions[k] !== 'D');
+      function getVoterLean(issueId) {
+        const stmtData = _cs[issueId];
+        if (stmtData && stmtData.reactions && Object.keys(stmtData.reactions).length > 0) {
+          const voice = ISSUE_VOICE[issueId] || 'LEFT';
+          const reacts = stmtData.reactions;
+          const ups = Object.values(reacts).filter(r => r === 'up').length;
+          const downs = Object.values(reacts).length - ups;
+          if (ups === downs) return 'split';
+          if (voice === 'LEFT') return ups > downs ? 'A' : 'C';
+          else return ups > downs ? 'C' : 'A';
+        }
+        const v = answers?.[issueId];
+        return (v === 'A' || v === 'B' || v === 'C') ? v : null;
+      }
       return (
         <React.Fragment>
         <div className="fixed inset-0 z-50 flex flex-col bg-black/60 lg:items-center lg:justify-center lg:p-8">
           <div className="flex flex-col bg-white lg:rounded-2xl lg:shadow-2xl lg:max-w-4xl w-full lg:max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className={`${accentBg} px-6 pt-6 pb-6 relative flex-shrink-0`}>
-            <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
+          <div className={`${accentBg} px-5 pt-4 pb-4 relative flex-shrink-0`}>
+            <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
 
-            {/* Mobile: stacked / Desktop: two-column */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:gap-8">
-
-              {/* Left col: photo + party + name + website — fixed width on desktop */}
-              <div className="flex items-center gap-4 lg:flex-col lg:items-center lg:text-center lg:w-40 lg:flex-shrink-0">
-                {/* Photo + tap-to-add label stacked together */}
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  {onSelect ? (
-                    <button onClick={onSelect} className="relative active:scale-95 hover:scale-105 transition-transform" title={isSelected ? 'Remove from ballot' : 'Add to ballot'}>
-                      <div className={`w-20 h-20 lg:w-28 lg:h-28 rounded-full border-4 overflow-hidden bg-white/20 transition-colors ${isSelected ? (candidate.party === 'D' ? 'border-blue-200' : candidate.party === 'R' ? 'border-red-200' : 'border-slate-200') : 'border-white/50'}`}>
-                        <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
-                      </div>
-                      <span className={`absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full flex items-center justify-center text-base font-black border-2 border-white shadow-md transition-colors ${isSelected ? (candidate.party === 'D' ? 'bg-blue-200 text-blue-900' : candidate.party === 'R' ? 'bg-red-200 text-red-900' : 'bg-slate-200 text-slate-900') : 'bg-white text-slate-900'}`}>
-                        {isSelected ? '✓' : '+'}
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-full border-4 border-white/50 overflow-hidden bg-white/20">
+            {/* Top row: photo + identity + match score */}
+            <div className="flex items-center gap-3">
+              {/* Photo */}
+              <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+                {onSelect ? (
+                  <button onClick={onSelect} className="relative active:scale-95 hover:scale-105 transition-transform" title={isSelected ? 'Remove from ballot' : 'Add to ballot'}>
+                    <div className={`w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 overflow-hidden bg-white/20 transition-colors ${isSelected ? (candidate.party === 'D' ? 'border-blue-200' : candidate.party === 'R' ? 'border-red-200' : 'border-slate-200') : 'border-white/50'}`}>
                       <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
                     </div>
-                  )}
-                  {onSelect && (
-                    <p className={`text-[9px] font-bold uppercase tracking-widest text-center ${isSelected ? (candidate.party === 'D' ? 'text-blue-200' : candidate.party === 'R' ? 'text-red-200' : 'text-slate-200') : 'text-white/70'}`}>
-                      {isSelected ? '✓ On Ballot' : 'Tap to Add'}
-                    </p>
-                  )}
-                </div>
-                {/* Name + party + website */}
-                <div>
-                  <p className="text-white/70 text-xs font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
-                  <h2 className="text-white font-black text-xl lg:text-2xl leading-tight">{candidate.name}</h2>
-                  <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5 text-white/60 hover:text-white transition-colors" title="Visit website">
-                    <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  </a>
-                </div>
-              </div>
-
-              {/* Divider — desktop only */}
-              <div className="hidden lg:block w-px self-stretch bg-white/20 flex-shrink-0" />
-
-              {/* Right col: hook + summary */}
-              <div className="flex-1 lg:py-2">
-                {candidate.hook && (
-                  <p className="text-white font-black mt-4 lg:mt-0 leading-tight text-[20px] lg:text-[26px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.01em'}}>
-                    {candidate.hook}
+                    <span className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center text-sm font-black border-2 border-white shadow-md transition-colors ${isSelected ? (candidate.party === 'D' ? 'bg-blue-200 text-blue-900' : candidate.party === 'R' ? 'bg-red-200 text-red-900' : 'bg-slate-200 text-slate-900') : 'bg-white text-slate-900'}`}>
+                      {isSelected ? '✓' : '+'}
+                    </span>
+                  </button>
+                ) : (
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white/50 overflow-hidden bg-white/20">
+                    <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
+                  </div>
+                )}
+                {onSelect && (
+                  <p className={`text-[8px] font-bold uppercase tracking-widest text-center mt-0.5 ${isSelected ? (candidate.party === 'D' ? 'text-blue-200' : candidate.party === 'R' ? 'text-red-200' : 'text-slate-200') : 'text-white/70'}`}>
+                    {isSelected ? '✓ On Ballot' : 'Tap to Add'}
                   </p>
                 )}
-                {candidate.summary && (
-                  <p className={`text-white/85 mt-2 leading-snug text-[17px] font-medium`}>{candidate.summary}</p>
-                )}
               </div>
 
+              {/* Name + party + website + match score */}
+              <div className="flex-1 min-w-0">
+                {raceName && (
+                  <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest leading-tight">
+                    {formatOfficeLines(raceName).map((line, i) => (
+                      <span key={i} className="block">{line}</span>
+                    ))}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
+                  {isJudicialCandidate ? (
+                    <span className="text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white/60">Party Aligned</span>
+                  ) : matchScore !== null && (
+                    <span className="text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white">{matchScore}% match</span>
+                  )}
+                </div>
+                <h2 className="text-white font-black text-xl leading-tight">{candidate.name}</h2>
+                <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer" className="inline-block mt-0.5 text-white/60 hover:text-white transition-colors" title="Visit website">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </a>
+              </div>
             </div>
+            {onCompare ? (
+              <button onClick={onCompare}
+                className="mt-3 w-full py-2 rounded-full text-[12px] font-black uppercase tracking-widest text-white/90 hover:text-white transition-colors"
+                style={{background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', letterSpacing:'0.08em'}}>
+                {isOpponent ? '← Back to Your Match' : 'Compare to Opponent →'}
+              </button>
+            ) : (
+              <div className="mt-3 w-full py-2 rounded-full text-center text-[12px] font-black uppercase tracking-widest text-white/35"
+                style={{background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', letterSpacing:'0.08em'}}>
+                No Opponent — Uncontested
+              </div>
+            )}
+
+            {/* Hook + summary below */}
+            {(candidate.hook || candidate.summary) && (
+              <div className="mt-3 border-t border-white/15 pt-3">
+                {hookCollapsed ? (
+                  <button onClick={() => setHookCollapsed(false)}
+                    className="text-white/70 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest">
+                    ▶ Show bio
+                  </button>
+                ) : (
+                  <>
+                    {candidate.hook && (
+                      <p className="text-white font-black leading-tight text-[18px] lg:text-[22px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.01em'}}>
+                        {candidate.hook}
+                      </p>
+                    )}
+                    {candidate.summary && (
+                      <p className="text-white/85 mt-1.5 leading-snug text-[14px] font-medium">{candidate.summary}</p>
+                    )}
+                    <div className="flex justify-end mt-1.5">
+                      <button onClick={() => setHookCollapsed(true)}
+                        className="text-white/70 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest">
+                        Hide bio ▲
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           {/* Issue positions — 2 columns on desktop */}
           <div className="flex-1 overflow-y-auto">
+            {(() => {
+              const lastName = candidate.name.split(' ').slice(-1)[0];
+              const allEvidenceVals = issues ? issues.map(i => candidate.evidence?.[i.id]).filter(Boolean) : [];
+              const sharedEvidence = allEvidenceVals.length > 1 && allEvidenceVals.every(e => e === allEvidenceVals[0]) ? allEvidenceVals[0] : null;
+              return (
+                <>
+                  {sharedEvidence && (
+                    <p className="text-sm text-slate-500 leading-relaxed px-5 pt-4 pb-2 border-b border-slate-100 italic">{sharedEvidence}</p>
+                  )}
             <div className="divide-y divide-slate-100 lg:divide-y-0 lg:columns-2">
               {issues && issues.map((issue, idx) => {
                 const pos = candidate.positions?.[issue.id];
                 const hasStance = pos === 'A' || pos === 'B' || pos === 'C';
-                const voterPos = answers?.[issue.id];
-                const isMatch = hasAnswers && voterPos && voterPos !== 'D' && hasStance && pos === voterPos;
-                const isMismatch = hasAnswers && voterPos && voterPos !== 'D' && hasStance && pos !== voterPos;
+                const voterLean = hasAnswers ? getVoterLean(issue.id) : null;
+                const isSplit = voterLean === 'split';
+                const isMatch = hasAnswers && voterLean && !isSplit && hasStance && voterLean === pos;
+                const isMismatch = hasAnswers && voterLean && !isSplit && hasStance && voterLean !== pos;
                 const posText = issue[pos] || '';
-                const evidence = candidate.evidence?.[issue.id];
+                const rawEvidence = sharedEvidence ? null : candidate.evidence?.[issue.id];
+                const startsWithVerb = rawEvidence && /^(voted|supported|supports|opposed|opposes|authored|filed|backed|signed|sponsored|co-|introduced)/i.test(rawEvidence.trimStart());
+                const evidence = rawEvidence && startsWithVerb && !rawEvidence.trimStart().toLowerCase().startsWith(lastName.toLowerCase())
+                  ? `${lastName} ${rawEvidence.trimStart().charAt(0).toLowerCase()}${rawEvidence.trimStart().slice(1)}`
+                  : rawEvidence;
                 const stance = pos === 'A' ? { label: 'Liberal position', word: 'liberal', chip: 'bg-blue-100 text-blue-700' }
                   : pos === 'B' ? { label: 'Moderate position', word: 'moderate', chip: 'bg-purple-100 text-purple-700' }
                   : pos === 'C' ? { label: 'Conservative position', word: 'conservative', chip: 'bg-red-100 text-red-700' }
@@ -2620,12 +2921,14 @@
                 const expandable = stance && posText;
                 const isOpen = !!openIssues[issue.id];
                 return (
-                  <div key={issue.id} className={`px-5 py-3 lg:py-4 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : ''}`}>
+                  <div key={issue.id} className={`px-5 py-3 lg:py-4 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : isSplit ? 'bg-slate-50' : ''}`}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${POS_DOT[pos] || 'bg-slate-300'}`} />
                       <span className="text-[11px] lg:text-xs font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
                       {isMatch && <span className="ml-auto text-[10px] lg:text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">✓ Match</span>}
                       {isMismatch && <span className="ml-auto text-[10px] lg:text-xs font-bold text-rose-500 bg-rose-100 px-1.5 py-0.5 rounded-full">✗ Differs</span>}
+                      {isSplit && hasStance && <span className="ml-auto text-[10px] lg:text-xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">∼ Split</span>}
+                      {hasAnswers && !voterLean && !isSplit && <span className="ml-auto text-[10px] lg:text-xs font-bold text-slate-300 px-1.5 py-0.5 rounded-full italic">Not rated</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       {stance ? (
@@ -2640,7 +2943,7 @@
                           )}
                         </span>
                       ) : (
-                        <span className="text-sm text-slate-400 italic">No published position found</span>
+                        !evidence && <span className="text-sm text-slate-400 italic">No published position found</span>
                       )}
                     </div>
                     {isOpen && expandable && (
@@ -2656,6 +2959,9 @@
                 );
               })}
             </div>
+                </>
+              );
+            })()}
             {/* Sources & methodology strip */}
             <div className="px-5 py-2.5 flex justify-center border-t border-slate-100 bg-slate-50">
               <button onClick={() => setShowSources(true)} className="text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5">
@@ -2664,18 +2970,22 @@
               </button>
             </div>
 
-            {/* Bottom add-to-ballot CTA */}
+            {/* Bottom CTA */}
             <div className={`px-5 py-4 ${accentBg} flex items-center justify-between gap-4`}>
-              <div>
-                <p className="text-white font-black text-base leading-tight">{candidate.name}</p>
-                <p className="text-white/70 text-xs">{raceName}</p>
-              </div>
-              <button
-                onClick={onSelect}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wide transition-all active:scale-95 ${isSelected ? 'bg-white text-slate-900' : 'bg-white/20 text-white border-2 border-white/50 hover:bg-white/30'}`}
-              >
-                {isSelected ? '✓ On Ballot' : '+ Add to Ballot'}
-              </button>
+              {onClose && (
+                <button onClick={onClose}
+                  className="flex items-center gap-2 text-white/80 hover:text-white font-black text-sm uppercase tracking-widest transition-colors">
+                  ← Back to Matches
+                </button>
+              )}
+              {onSelect && (
+                <button
+                  onClick={onSelect}
+                  className={`ml-auto flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wide transition-all active:scale-95 ${isSelected ? 'bg-white text-slate-900' : 'bg-white/20 text-white border-2 border-white/50 hover:bg-white/30'}`}
+                >
+                  {isSelected ? '✓ On Ballot' : '+ Add'}
+                </button>
+              )}
             </div>
           </div>
           </div>
@@ -2686,7 +2996,8 @@
     }
 
     // ── Race detail comparison table ────────────────────────────────────────
-    function RaceDetail({ race, issues, answers, ranks, selected, onSelect, onBack, onNextRace, onPrevRace, onQuiz, onHome, inline=false }) {
+    function RaceDetail({ race, issues, answers, ranks, checkedStatements: _checkedStmts={}, selected, onSelect, onBack, onNextRace, onPrevRace, onQuiz, onHome, inline=false }) {
+      const checkedStatements = _checkedStmts;
       const candidates = race.candidates.filter(Boolean).slice(0, 2);
       const hasAnswers = answers && Object.keys(answers).length > 0;
       const currentSelected = selected[race.office];
@@ -2776,6 +3087,8 @@
               candidate={profileCandidate}
               issues={issues}
               answers={answers}
+              checkedStatements={checkedStatements}
+              ranks={ranks}
               onClose={() => setProfileCandidate(null)}
             />
           )}
@@ -3116,7 +3429,7 @@
                       </div>
                       {/* Candidate panels */}
                       {colCands.map((c, ci) => {
-                        const score = hasAnswers ? calcMatch(c, answers) : null;
+                        const score = hasAnswers ? calcMatch(c, answers, checkedStatements, ranks) : null;
                         const isChosen = currentSelected === c.name;
                         return (
                           <div key={c.name} style={{width:P}} className={`flex flex-col items-center justify-center gap-1.5 py-3 border-r border-slate-200 ${isChosen?'bg-emerald-50':''}`}>
@@ -3307,7 +3620,7 @@
       );
     }
 
-    function Browse({ county, counties, issues, answers, ranks, selected, setSelected, userDistricts, setUserDistricts, onBallot, onHome, onQuiz, initialRace, clearInitialRace }) {
+    function Browse({ county, counties, issues, answers, ranks, checkedStatements, selected, setSelected, userDistricts, setUserDistricts, onBallot, onHome, onQuiz, initialRace, clearInitialRace }) {
       const countyData = counties[county];
       const [activeTab, setActiveTab] = useState('federal');
       const [expandedRaces, setExpandedRaces] = useState(new Set());
@@ -3429,7 +3742,7 @@
               const isExpanded = expandedRaces.has(race.office);
               const isSelected = !!selected[race.office];
               const score = answers && Object.keys(answers).length > 0
-                ? Math.max(...race.candidates.filter(Boolean).map(c => calcMatch(c, answers) || 0))
+                ? Math.max(...race.candidates.filter(Boolean).map(c => calcMatch(c, answers, checkedStatements, ranks) || 0))
                 : null;
               return (
                 <div key={race.office} id={'race-'+race.office.replace(/\s+/g,'-')} className="rounded-2xl shadow-sm border border-slate-800" style={{overflow: isExpanded ? 'visible' : 'hidden'}}>
@@ -3503,6 +3816,7 @@
                         issues={issues}
                         answers={answers}
                         ranks={ranks}
+                        checkedStatements={checkedStatements}
                         selected={selected}
                         onSelect={(office, name) => setSelected(prev => name ? {...prev, [office]: name} : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== office)))}
                         onBack={() => toggleRace(race.office)}
@@ -3543,6 +3857,8 @@
               candidate={browseProfile.candidate}
               issues={issues}
               answers={answers}
+              checkedStatements={checkedStatements}
+              ranks={ranks}
               onClose={() => setBrowseProfile(null)}
               isSelected={selected[browseProfile.race.office] === browseProfile.candidate.name}
               onSelect={() => setSelected(prev => {
@@ -3557,7 +3873,7 @@
       );
     }
 
-    function BrowseRaceCard({ race, answers, selected, onToggle }) {
+    function BrowseRaceCard({ race, answers, ranks, checkedStatements, selected, onToggle }) {
       const candidates = race.candidates.filter(Boolean);
       const hasAnswers = answers && Object.keys(answers).length > 0;
       const currentSelected = selected[race.office];
@@ -3565,7 +3881,7 @@
       // Best-match hint when quiz taken
       let matchHint = null;
       if (hasAnswers && candidates.length >= 2) {
-        const scores = candidates.map(c => ({ name: c.name, score: calcMatch(c, answers) })).filter(s => s.score !== null);
+        const scores = candidates.map(c => ({ name: c.name, score: calcMatch(c, answers, checkedStatements, ranks) })).filter(s => s.score !== null);
         if (scores.length > 0) {
           scores.sort((a, b) => b.score - a.score);
           matchHint = `${scores[0].score}% match`;
@@ -3609,7 +3925,7 @@
     }
 
     // ─── BALLOT ───
-    function Ballot({ county, counties, selected, answers, issues, userDistricts, onHome, onEdit }) {
+    function Ballot({ county, counties, selected, answers, ranks, checkedStatements, issues, userDistricts, onHome, onEdit }) {
       const countyData = counties[county];
       const hasAnswers = answers && Object.keys(answers).length > 0;
 
@@ -3628,7 +3944,7 @@
         const chosen = race.candidates.find(c => c.name === selected[race.office]);
         if (chosen) return { candidate: chosen, isChosen: true };
         if (hasAnswers) {
-          const scored = race.candidates.filter(Boolean).map(c => ({ candidate: c, score: calcMatch(c, answers) })).filter(s => s.score !== null).sort((a,b) => b.score - a.score);
+          const scored = race.candidates.filter(Boolean).map(c => ({ candidate: c, score: calcMatch(c, answers, checkedStatements, ranks) })).filter(s => s.score !== null).sort((a,b) => b.score - a.score);
           if (scored.length > 0) return { candidate: scored[0].candidate, isChosen: false };
         }
         return { candidate: race.candidates.filter(Boolean)[0], isChosen: false };
@@ -3859,8 +4175,27 @@
       const [county, setCounty] = useState('hays');
       // ?persist=1 in URL uses localStorage (for testing); otherwise sessionStorage (clears on new visit)
       const store = new URLSearchParams(window.location.search).get('persist') === '1' ? localStorage : sessionStorage;
-      const [answers, setAnswers] = useState(() => { try { return JSON.parse(store.getItem('vyv_answers') || '{}'); } catch(e) { return {}; } });
+      const [answers, setAnswers] = useState(() => {
+        try {
+          const a = JSON.parse(store.getItem('vyv_answers') || '{}');
+          const stmts = JSON.parse(store.getItem('vyv_stmts') || '{}');
+          // If all answers are V2 ('S') but no stmts data, clear stale session so quiz reruns fresh
+          const allS = Object.keys(a).length > 0 && Object.values(a).every(v => v === 'S' || v === 'D');
+          if (allS && Object.keys(stmts).length === 0) {
+            store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); store.removeItem('vyv_stmts');
+            return {};
+          }
+          // Backfill: if stmts has reactions for an issue but answers entry is missing, restore it
+          Object.keys(stmts).forEach(id => {
+            if (!a[id] && stmts[id] && stmts[id].reactions && Object.keys(stmts[id].reactions).length > 0) {
+              a[id] = 'S';
+            }
+          });
+          return a;
+        } catch(e) { return {}; }
+      });
       const [ranks, setRanks] = useState(() => { try { return JSON.parse(store.getItem('vyv_ranks') || '{}'); } catch(e) { return {}; } });
+      const [checkedStatements, setCheckedStatements] = useState(() => { try { return JSON.parse(store.getItem('vyv_stmts') || '{}'); } catch(e) { return {}; } });
       const [selected, setSelected] = useState({});
       const [issues, setIssues] = useState(ISSUES);
       const [counties, setCounties] = useState(COUNTIES);
@@ -3873,9 +4208,27 @@
       );
       const [pendingScreen, setPendingScreen] = useState('quiz');
 
-      // Persist answers + ranks
+      // Persist answers + ranks + checkedStatements
       React.useEffect(() => { try { store.setItem('vyv_answers', JSON.stringify(answers)); } catch(e) {} }, [answers]);
       React.useEffect(() => { try { store.setItem('vyv_ranks', JSON.stringify(ranks)); } catch(e) {} }, [ranks]);
+      React.useEffect(() => { try { store.setItem('vyv_stmts', JSON.stringify(checkedStatements)); } catch(e) {} }, [checkedStatements]);
+
+      // Auto-select best-matched candidate per race whenever answers/ranks/statements change
+      React.useEffect(() => {
+        if (Object.keys(answers).length === 0) return;
+        const allRaces = Object.values(counties).flatMap(c => Object.values(c.races || {}).flat());
+        const autoSelected = {};
+        allRaces.forEach(race => {
+          const [c1, c2] = (race.candidates || []).filter(Boolean);
+          if (!c1) return;
+          const s1 = calcMatch(c1, answers, checkedStatements, ranks);
+          const s2 = c2 ? calcMatch(c2, answers, checkedStatements, ranks) : null;
+          if (s1 !== null) {
+            autoSelected[race.office] = (s2 !== null && s2 > s1) ? c2.name : c1.name;
+          }
+        });
+        setSelected(prev => ({ ...autoSelected, ...prev }));
+      }, [answers, ranks, checkedStatements, counties]);
       const [startIssueId, setStartIssueId] = useState(null);
       const [returnToSummary, setReturnToSummary] = useState(false);
       const [returnToRace, setReturnToRace] = useState(null);   // { office } → go back to RaceDetail after quiz
@@ -3908,7 +4261,10 @@
             Object.assign(builtCounties[key], buildCountyRaces(statewideRaces, localRaces));
           }
 
-          setIssues(builtIssues);
+          const patchedIssues = builtIssues.map(iss =>
+            iss.id === 'moneyInPolitics' ? { ...iss, topic: 'Election Integrity' } : iss
+          );
+          setIssues(patchedIssues);
           setCounties(builtCounties);
           setDataSource('sheets');
           setScreen(new URLSearchParams(window.location.search).get('testBallot') === '1' ? 'ballot' : 'landing');
@@ -3941,7 +4297,7 @@
             issues={issues}
             answers={answers}
             onQuiz={(id) => { setStartIssueId(id || null); setPendingScreen('landing'); setScreen('quiz'); }}
-            onSummary={() => setScreen('summary')}
+            onSummary={() => setScreen('results')}
             onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
             onBrowse={() => setScreen('browse')}
           />
@@ -3974,25 +4330,58 @@
             key={startIssueId}
             issue={issue}
             initialAnswer={answers[issue?.id] || null}
-            initialRank={ranks[issue?.id] || null}
-            onSave={(answer, rank) => {
-              setAnswers(prev => ({ ...prev, [issue.id]: answer }));
-              setRanks(prev => ({ ...prev, [issue.id]: rank }));
-              setStartIssueId(null);
+            initialRank={ranks[issue?.id] || (answers[issue?.id] === 'S' ? 5 : null)}
+            initialReactions={(checkedStatements[issue?.id] || {}).reactions || null}
+            onSave={(answer, rank, stmtData) => {
+              setAnswers(prev => { const n = { ...prev, [issue.id]: answer }; try { store.setItem('vyv_answers', JSON.stringify(n)); } catch(e) {} return n; });
+              setRanks(prev => { const n = { ...prev, [issue.id]: rank }; try { store.setItem('vyv_ranks', JSON.stringify(n)); } catch(e) {} return n; });
+              if (stmtData) setCheckedStatements(prev => { const n = { ...prev, [issue.id]: stmtData }; try { store.setItem('vyv_stmts', JSON.stringify(n)); } catch(e) {} return n; });
               if (returnToRace) {
                 setInitialRace(returnToRace);
                 setReturnToRace(null);
+                setStartIssueId(null);
                 setScreen('browse');
               } else {
-                setScreen('landing');
+                const currentIdx = issues.findIndex(i => i.id === issue.id);
+                const nextIssue = issues[currentIdx + 1];
+                if (nextIssue) {
+                  setStartIssueId(nextIssue.id);
+                } else {
+                  setStartIssueId(null);
+                  setScreen('landing');
+                }
               }
             }}
             onBack={() => {
-              setStartIssueId(null);
-              if (returnToRace) { setInitialRace(returnToRace); setReturnToRace(null); setScreen('browse'); }
-              else if (pendingScreen === 'summary') setScreen('summary');
-              else setScreen('landing');
+              const currentIdx = issues.findIndex(i => i.id === issue.id);
+              const prevIssue = issues[currentIdx - 1];
+              if (prevIssue) {
+                setStartIssueId(prevIssue.id);
+              } else {
+                setStartIssueId(null);
+                if (returnToRace) { setInitialRace(returnToRace); setReturnToRace(null); setScreen('browse'); }
+                else if (pendingScreen === 'summary') setScreen('summary');
+                else setScreen('landing');
+              }
             }}
+            onSavePartial={(answer, rnk, stmtData) => {
+              setAnswers(prev => {
+                const next = { ...prev, [issue.id]: answer };
+                try { store.setItem('vyv_answers', JSON.stringify(next)); } catch(e) {}
+                return next;
+              });
+              if (rnk) setRanks(prev => {
+                const next = { ...prev, [issue.id]: rnk };
+                try { store.setItem('vyv_ranks', JSON.stringify(next)); } catch(e) {}
+                return next;
+              });
+              if (stmtData) setCheckedStatements(prev => {
+                const next = { ...prev, [issue.id]: stmtData };
+                try { store.setItem('vyv_stmts', JSON.stringify(next)); } catch(e) {}
+                return next;
+              });
+            }}
+            onHome={() => { setStartIssueId(null); setScreen('landing'); }}
             onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
           />
         );
@@ -4035,12 +4424,15 @@
             counties={counties}
             issues={issues}
             answers={answers}
+            ranks={ranks}
+            checkedStatements={checkedStatements}
             selected={selected}
             setSelected={setSelected}
             userDistricts={userDistricts}
             onBallot={() => setScreen('ballot')}
-            onRetake={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
+            onRetake={() => { setAnswers({}); setRanks({}); setCheckedStatements({}); setSelected({}); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); store.removeItem('vyv_stmts'); setScreen('landing'); }}
             onBrowse={() => setScreen('browse')}
+            onCompare={(race) => { setInitialRace(race.office); setScreen('browse'); }}
           />
         );
       }
@@ -4053,6 +4445,7 @@
             issues={issues}
             answers={answers}
             ranks={ranks}
+            checkedStatements={checkedStatements}
             selected={selected}
             setSelected={setSelected}
             userDistricts={userDistricts}
@@ -4077,6 +4470,8 @@
             counties={counties}
             selected={selected}
             answers={answers}
+            ranks={ranks}
+            checkedStatements={checkedStatements}
             issues={issues}
             userDistricts={userDistricts}
             onHome={() => setScreen('landing')}

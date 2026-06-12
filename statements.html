@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Statement Review — VoteYourViews.org</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; }
+    h1, h2, h3 { font-family: 'Barlow Condensed', sans-serif; }
+    textarea { resize: vertical; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <div class="bg-slate-900 border-b border-slate-700 px-6 py-4 flex items-center gap-4">
+    <a href="/" class="text-slate-400 hover:text-white text-sm font-medium">← Back to App</a>
+    <div class="flex-1">
+      <h1 class="text-2xl font-black uppercase tracking-wide text-white leading-none">Statement Review</h1>
+      <p class="text-slate-400 text-xs mt-0.5">VoteYourViews.org · Internal Tool</p>
+    </div>
+  </div>
+
+  <!-- Intro -->
+  <div class="max-w-3xl mx-auto px-6 py-8">
+    <div class="bg-slate-800 border border-slate-600 rounded-xl p-5 mb-8">
+      <p class="text-slate-300 text-sm leading-relaxed">
+        These are the belief statements shown to voters in the quiz. Each statement is shown as a swipe card — voters react with <strong class="text-white">agree</strong> or <strong class="text-white">disagree</strong>. Use the form below each statement to suggest an edit. Submissions go to a review sheet for approval before any change is made to the live app.
+      </p>
+    </div>
+
+    <div id="statements-container">
+      <p class="text-slate-500 text-sm">Loading statements...</p>
+    </div>
+  </div>
+
+  <!-- Submission confirmation toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+    ✓ Suggestion submitted — thank you!
+  </div>
+
+  <script>
+    // ── Statement data (matches index.html exactly) ──────────────────────────
+    const ISSUE_STATEMENTS = {
+      'Reproductive Rights': [
+        "Forcing anyone, at any age — including victims of rape or incest — to give birth should NOT be Texas law.",
+        "The difficult decision to end a pregnancy in the first trimester should be between a woman and her doctor — not the government.",
+        "A doctor should not be prosecuted when a patient's life requires the termination of a pregnancy.",
+        "Whether you support abortion rights or oppose them, candidates should not be elected on this issue alone.",
+      ],
+      'Immigration & Border': [
+        "Texas taxpayers should not be forced to pay for the healthcare, education, and housing of people who entered this country illegally.",
+        "Every criminal illegal immigrant who should have been deported is a preventable crime against an American citizen.",
+        "If you want to live in America, get in line and do it legally — just like millions of others did.",
+        "The federal government has failed to secure the border, so Texas has every right to do it themselves.",
+      ],
+      'Gun Policy': [
+        "A gun owner should be able to buy and use a military-style weapon without government restriction.",
+        "Mass shootings aren't the responsibility of gun owners, but the responsibility of untreated mental illness.",
+        "It makes sense that an 18 year old can legally buy an AR-15 but cannot buy a handgun until they turn 21.",
+        "Texas should continue to reject Red Flag laws based on warning signs — until a crime is actually committed, no one should have their guns taken away.",
+      ],
+      'Public Education': [
+        "Tax dollars should not be used to pay for private school tuition — it takes money away from the public schools that serve the majority of Texas children.",
+        "Texas teachers earn thousands less than the national average — and every year we lose more of them because they can no longer afford to stay in the classroom.",
+        "It's unacceptable that Texas found $11 billion for border security and $1 billion for private school vouchers, but refuses to fully fund the public schools educating 5 million Texas children.",
+        "Our children's science education should not depend on whether their teacher puts biblical or political beliefs before scientific facts.",
+      ],
+      'Healthcare': [
+        "The government has no business getting between a patient and their doctor — and that includes forcing Americans into a one-size-fits-all healthcare system.",
+        "Expanding Medicaid in Texas means billions in new government spending and more dependency — not better care.",
+        "Free-market competition — not government programs — is what drives down costs and improves quality in healthcare, just like in every other industry.",
+        "Texas has the highest uninsured rate in the nation because Washington keeps blocking the market solutions that would actually make coverage affordable.",
+      ],
+      'Climate & Energy': [
+        "Texas's oil and gas industry supports millions of jobs and families — radical climate policies would destroy them overnight.",
+        "The federal government has no business telling Texas how to manage its energy industry.",
+        "Wind and solar sound great until the grid fails in February and people freeze to death — Texas needs reliable energy, not green experiments.",
+        "Climate change policies cost real Texans real money — higher energy bills, lost jobs, and a weaker economy — for problems we didn't create.",
+      ],
+      'Election Integrity': [
+        "Closing polling locations in minority neighborhoods and making lines longer is voter suppression — plain and simple.",
+        "Requiring a photo ID to vote sounds reasonable until you realize hundreds of thousands of eligible Texans don't have one and can't easily get one.",
+        "When Texas purges voter rolls and removes eligible voters weeks before an election, democracy is being rigged — just not in the way they claim.",
+        "Every eligible Texan should be able to vote without having to fight through obstacles designed to make it harder.",
+      ],
+      'Social Security & Medicare': [
+        "Texans spent their entire working lives paying into Social Security and Medicare — any politician who cuts those benefits is stealing from them.",
+        "Privatizing Social Security means gambling the retirement security of millions of Texans on the stock market.",
+        "4.7 million Texans depend on Social Security and Medicare — cutting these programs to pay for tax cuts for the wealthy is unacceptable.",
+        "No senior in Texas should have to choose between buying groceries and buying their medication.",
+      ],
+      'Housing & Affordability': [
+        "When a teacher, a nurse, or a firefighter can't afford to live in the community they serve, something is broken.",
+        "Texas home prices rose over 50% in three years — and wages didn't. That's not a market working, that's a crisis.",
+        "Corporate landlords buying up Texas homes and turning them into rentals is making it impossible for working families to ever own a home.",
+        "A family that has lived in their Texas community for generations should not be priced out of it by out-of-state investors.",
+      ],
+    };
+
+    // ── Google Form config ────────────────────────────────────────────────────
+    // Replace FORM_ID and entry IDs after creating your Google Form
+    // Form fields: Issue (entry.ISSUE), Statement # (entry.STMT_NUM),
+    //              Current Text (entry.CURRENT), Suggested Edit (entry.SUGGESTION),
+    //              Reason (entry.REASON)
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyq0l2PJfmQW6LbR_j-R4ooOyHP5Zvrr-RfexaTr9ugVo-F8oAFHSbI9xyQPrlhCmA/exec';
+
+    function formatDateTime(d) {
+      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) +
+        ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function render() {
+      const container = document.getElementById('statements-container');
+      container.innerHTML = '';
+
+      Object.entries(ISSUE_STATEMENTS).forEach(([topic, stmts]) => {
+        const section = document.createElement('div');
+        section.className = 'mb-12';
+
+        const heading = document.createElement('h2');
+        heading.className = 'text-2xl font-black uppercase tracking-widest text-white mb-4 pb-2 border-b border-slate-700';
+        heading.textContent = topic;
+        section.appendChild(heading);
+
+        stmts.forEach((text, idx) => {
+          const card = document.createElement('div');
+          card.className = 'bg-slate-800 border border-slate-700 rounded-xl p-5 mb-4';
+
+          card.innerHTML = `
+            <div class="flex gap-3 items-start mb-4">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-slate-600 text-slate-300 text-xs font-black flex items-center justify-center">${idx + 1}</span>
+              <p class="text-white text-sm leading-relaxed">${text}</p>
+            </div>
+            <details class="group">
+              <summary class="cursor-pointer text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors list-none flex items-center gap-1">
+                <span class="group-open:hidden">▶ Suggest an edit</span>
+                <span class="hidden group-open:inline">▼ Suggest an edit</span>
+              </summary>
+              <form class="mt-4 space-y-3 suggest-form"
+                    data-issue="${topic}"
+                    data-stmt="${idx + 1}"
+                    data-current="${text.replace(/"/g, '&quot;')}">
+                <div>
+                  <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Your suggested edit</label>
+                  <textarea name="suggestion" rows="3"
+                    class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    placeholder="Paste the full revised statement here…"></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Reason / notes (optional)</label>
+                  <textarea name="reason" rows="2"
+                    class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    placeholder="Why this change? Any context?"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Your name</label>
+                    <input type="text" name="submitter_name"
+                      class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      placeholder="First Last" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Email</label>
+                    <input type="email" name="submitter_email"
+                      class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      placeholder="you@example.com" />
+                  </div>
+                </div>
+                <button type="submit"
+                  class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-colors">
+                  Submit Suggestion
+                </button>
+              </form>
+            </details>
+          `;
+
+          section.appendChild(card);
+        });
+
+        container.appendChild(section);
+      });
+
+      // Attach submit handlers
+      document.querySelectorAll('.suggest-form').forEach(form => {
+        form.addEventListener('submit', handleSubmit);
+      });
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const issue      = form.dataset.issue;
+      const stmtNum    = form.dataset.stmt;
+      const current    = form.dataset.current;
+      const suggestion = form.querySelector('[name="suggestion"]').value.trim();
+      const reason     = form.querySelector('[name="reason"]').value.trim();
+      const name       = form.querySelector('[name="submitter_name"]').value.trim();
+      const email      = form.querySelector('[name="submitter_email"]').value.trim();
+
+      if (!suggestion) {
+        alert('Please enter your suggested edit before submitting.');
+        return;
+      }
+
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+
+      const params = new URLSearchParams({
+        issue,
+        stmtNum:     `Statement ${stmtNum}`,
+        currentText: current,
+        suggestion,
+        reason,
+        name,
+        email,
+        submitted:   formatDateTime(new Date()),
+      });
+
+      fetch(`${APPS_SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' })
+        .catch(() => {})
+        .finally(() => {
+          btn.disabled = false;
+          btn.textContent = 'Submit Suggestion';
+          form.reset();
+          form.closest('details').removeAttribute('open');
+          showToast();
+        });
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.style.opacity = '1';
+      setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
+    render();
+  </script>
+</body>
+</html>
