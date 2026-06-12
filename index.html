@@ -2827,21 +2827,21 @@
               {/* Name + party + website + match score */}
               <div className="flex-1 min-w-0">
                 {raceName && (
-                  <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest leading-tight">
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest leading-tight mb-1">
                     {formatOfficeLines(raceName).map((line, i) => (
                       <span key={i} className="block">{line}</span>
                     ))}
                   </p>
                 )}
+                <h2 className="text-white font-black text-xl leading-tight mb-1">{candidate.name}</h2>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
                   {isJudicialCandidate ? (
                     <span className="text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white/60">Party Aligned</span>
                   ) : matchScore !== null && (
                     <span className="text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white">{matchScore}% match</span>
                   )}
                 </div>
-                <h2 className="text-white font-black text-xl leading-tight">{candidate.name}</h2>
                 <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer" className="inline-block mt-0.5 text-white/60 hover:text-white transition-colors" title="Visit website">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 </a>
