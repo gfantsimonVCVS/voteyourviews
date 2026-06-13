@@ -1491,7 +1491,6 @@
 
             {/* ── Right col (desktop) / Bottom (mobile): Icon grid + mobile CTAs ── */}
             <div className="w-full max-w-xs lg:max-w-sm relative z-20">
-              <p className="text-white text-sm text-center uppercase tracking-[0.2em] mb-2 font-black">Choose Your Views</p>
               <div className="grid grid-cols-3 gap-1.5 lg:gap-3 mb-3 lg:mb-0" onMouseLeave={() => setHoveredIssue(null)}>
                 {issueList.map(issue => (
                   <button
@@ -1535,7 +1534,7 @@
 
               {/* Mobile-only CTAs */}
               <div className="lg:hidden flex flex-col gap-2.5 mt-2">
-                {answeredCount > 0 && (
+                {answeredCount > 0 ? (
                   <div className="flex items-center gap-2">
                     <button onClick={onSummary} className="flex-1 py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97]" style={{background:'#2563eb', letterSpacing:'0.12em'}}>
                       Build My Ballot ({answeredCount}/9) →
@@ -1556,37 +1555,18 @@
                       </button>
                     )}
                   </div>
+                ) : (
+                  <button onClick={available ? () => onQuiz(null) : undefined} disabled={!available}
+                    className="w-full py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
+                    style={{background:'#2563eb', letterSpacing:'0.12em'}}>
+                    Choose Your Views →
+                  </button>
                 )}
-                <div className={`relative ${!available ? 'opacity-40 pointer-events-none' : ''}`}>
-                  <div className="flex rounded-full overflow-hidden border border-slate-500">
-                    <button onClick={onBrowse}
-                      className="flex-1 py-2.5 font-bold text-xs uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150"
-                      style={{letterSpacing:'0.12em'}}>
-                      Choose Candidates
-                    </button>
-                    <button onClick={() => setShowBrowseDrop(d => !d)}
-                      className="px-4 border-l border-slate-500 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center">
-                      <svg className={`w-3.5 h-3.5 transition-transform ${showBrowseDrop ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    </button>
-                  </div>
-                  {showBrowseDrop && (
-                    <div className="absolute top-full mt-1 left-0 right-0 rounded-2xl overflow-hidden shadow-xl z-20 border border-white/10"
-                      style={{background:'#1e293b'}}>
-                      <button onClick={() => { setShowBrowseDrop(false); onBrowse(); }}
-                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
-                        style={{letterSpacing:'0.1em'}}>
-                        All Candidates
-                      </button>
-                      <button onClick={() => { setShowBrowseDrop(false); setShowBrowseModal(true); }}
-                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
-                        style={{letterSpacing:'0.1em'}}>
-                        My Candidates
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <button onClick={available ? onBrowse : undefined} disabled={!available}
+                  className="w-full py-2.5 font-bold text-xs uppercase tracking-widest text-slate-300 hover:text-white rounded-full border border-slate-500 hover:bg-white/10 transition-all duration-150 disabled:opacity-40"
+                  style={{letterSpacing:'0.12em'}}>
+                  Browse Candidates
+                </button>
               </div>
             </div>
 
@@ -1692,7 +1672,7 @@
     };
 
     // ─── QUIZ ───
-    function Quiz({ onSave, onBack, onStartOver, onHome, onSavePartial, issue, initialAnswer = null, initialRank = null, initialReactions = null }) {
+    function Quiz({ onSave, onBack, onStartOver, onHome, onSavePartial, issue, initialAnswer = null, initialRank = null, initialReactions = null, answers = {}, onSummary }) {
       // reactions[i] = 'up' | 'down' | undefined
       const [reactions, setReactions] = useState(() => initialReactions || {});
       const [rank, setRank] = useState(initialRank);
@@ -1730,7 +1710,7 @@
       }
 
       function handleSave() {
-        if (!anyReacted) return;
+        if (!anyReacted) { onSave(null, null, null); return; }
         const ups = Object.values(reactions).filter(r => r === 'up').length;
         const score = ups / statements.length;
         onSave('S', rank || 5, { reactions, score });
@@ -1764,10 +1744,10 @@
                   <path d="M9 21V12h6v9"/>
                 </svg>
               </button>
-              <button onClick={handleSave} disabled={!allDone}
+              <button onClick={handleSave}
                 className="text-sm font-black uppercase tracking-widest shrink-0 transition-all"
-                style={{letterSpacing:'0.08em', color: allDone ? '#fff' : 'rgba(255,255,255,0.25)'}}>
-                Next →
+                style={{letterSpacing:'0.08em', color: '#fff'}}>
+                {allDone ? 'Next →' : 'Skip →'}
               </button>
             </div>
           </div>
@@ -1799,7 +1779,7 @@
           )}
 
           {/* Card area */}
-          <div className="flex-1 flex flex-col items-center justify-between max-w-lg mx-auto w-full px-4 py-4 fade-in">
+          <div className="flex-1 flex flex-col items-center justify-start max-w-lg mx-auto w-full px-4 py-4 fade-in">
 
             {!allDone ? (
               <>
@@ -1824,7 +1804,7 @@
                 </div>
 
                 {/* Accordion statements */}
-                <div className="w-full flex flex-col gap-2 flex-1 py-2">
+                <div className="w-full flex flex-col gap-2 py-2">
                   {statements.map((stmt, i) => {
                     const r = reactions[i];
                     const isOpen = i === cardIndex;
@@ -1883,9 +1863,18 @@
                   })}
                 </div>
 
+                {/* Build My Ballot shortcut */}
+                {Object.keys(answers).length > 0 && onSummary && (
+                  <button onClick={onSummary}
+                    className="mt-2 w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-95"
+                    style={{background:'#2563eb', color:'#fff', letterSpacing:'0.1em'}}>
+                    Build My Ballot ({Object.keys(answers).length}/9) →
+                  </button>
+                )}
+
                 {/* Skip issue */}
                 <button onClick={handleSkip}
-                  className="mb-8 w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-80 active:scale-95"
+                  className="mt-2 mb-4 w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-80 active:scale-95"
                   style={{color:'rgba(255,255,255,0.85)', border:'1px solid rgba(255,255,255,0.5)', letterSpacing:'0.1em'}}>
                   This issue doesn't affect my vote
                 </button>
@@ -1948,6 +1937,14 @@
                     className="w-full py-4 rounded-full text-sm font-black text-white uppercase tracking-widest transition-all hover:opacity-90"
                     style={{background:`linear-gradient(90deg,#b45309,${ACCENT})`, letterSpacing:'0.12em'}}>
                     Next Issue →
+                  </button>
+                )}
+
+                {Object.keys(answers).length > 0 && onSummary && (
+                  <button onClick={onSummary}
+                    className="w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-95"
+                    style={{background:'#2563eb', color:'#fff', letterSpacing:'0.1em'}}>
+                    Build My Ballot ({Object.keys(answers).length}/9) →
                   </button>
                 )}
               </div>
@@ -4346,9 +4343,11 @@
             initialRank={ranks[issue?.id] || (answers[issue?.id] === 'S' ? 5 : null)}
             initialReactions={(checkedStatements[issue?.id] || {}).reactions || null}
             onSave={(answer, rank, stmtData) => {
-              setAnswers(prev => { const n = { ...prev, [issue.id]: answer }; try { store.setItem('vyv_answers', JSON.stringify(n)); } catch(e) {} return n; });
-              setRanks(prev => { const n = { ...prev, [issue.id]: rank }; try { store.setItem('vyv_ranks', JSON.stringify(n)); } catch(e) {} return n; });
-              if (stmtData) setCheckedStatements(prev => { const n = { ...prev, [issue.id]: stmtData }; try { store.setItem('vyv_stmts', JSON.stringify(n)); } catch(e) {} return n; });
+              if (answer !== null) {
+                setAnswers(prev => { const n = { ...prev, [issue.id]: answer }; try { store.setItem('vyv_answers', JSON.stringify(n)); } catch(e) {} return n; });
+                setRanks(prev => { const n = { ...prev, [issue.id]: rank }; try { store.setItem('vyv_ranks', JSON.stringify(n)); } catch(e) {} return n; });
+                if (stmtData) setCheckedStatements(prev => { const n = { ...prev, [issue.id]: stmtData }; try { store.setItem('vyv_stmts', JSON.stringify(n)); } catch(e) {} return n; });
+              }
               if (returnToRace) {
                 setInitialRace(returnToRace);
                 setReturnToRace(null);
@@ -4396,6 +4395,8 @@
             }}
             onHome={() => { setStartIssueId(null); setScreen('landing'); }}
             onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
+            answers={answers}
+            onSummary={() => { setStartIssueId(null); setScreen('ballot'); }}
           />
         );
       }
