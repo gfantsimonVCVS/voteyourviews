@@ -4321,7 +4321,7 @@
             answers={answers}
             onQuiz={(id) => { setStartIssueId(id || null); setPendingScreen('landing'); setScreen('quiz'); }}
             onSummary={() => setScreen('results')}
-            onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
+            onStartOver={() => { setAnswers({}); setRanks({}); setCheckedStatements({}); setSelected({}); setStartIssueId(null); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); store.removeItem('vyv_stmts'); }}
             onBrowse={() => setScreen('browse')}
           />
         );
