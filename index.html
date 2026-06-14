@@ -1387,7 +1387,7 @@
           <header className="flex items-center justify-center px-0 py-0 lg:py-5 border-b border-white/5">
 
             {/* Logo — color full-width on mobile, white fixed-height on desktop */}
-            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full h-auto block md:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)', maxHeight:'120px', objectFit:'cover', objectPosition:'center'}} />
+            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full block md:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)', height:'72px', objectFit:'cover', objectPosition:'center'}} />
 
             {/* Desktop: logo + election info centered together as a unit */}
             <div className="hidden md:flex items-center gap-20 xl:gap-28">
@@ -1680,7 +1680,7 @@
     function Quiz({ onSave, onBack, onStartOver, onHome, onSavePartial, issue, initialAnswer = null, initialRank = null, initialReactions = null, answers = {}, onSummary }) {
       // reactions[i] = 'up' | 'down' | undefined
       const [reactions, setReactions] = useState(() => initialReactions || {});
-      const [rank, setRank] = useState(initialRank);
+      const [rank, setRank] = useState(initialRank ?? 5);
       const [showContext, setShowContext] = useState(false);
       const statements0 = (ISSUE_STATEMENTS[(issue || {}).topic] || []).slice(0, 3);
       const [cardIndex, setCardIndex] = useState(() => (initialReactions && Object.keys(initialReactions).length > 0) ? statements0.length : 0);
@@ -1917,7 +1917,7 @@
                 {/* Slider */}
                 <div className="p-4 rounded-2xl" style={{border:`2px solid ${ACCENT}`, background:`linear-gradient(160deg,${ACCENT}0e,${ACCENT}04)`}}>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-wider leading-tight">How important is this issue<br/>to your vote?</p>
+                    <p className="text-[14px] font-black text-slate-300 uppercase tracking-wider leading-tight">How important is this issue<br/>to your vote?</p>
                     <span className="text-sm font-black shrink-0 ml-2" style={{color: rank ? ACCENT : 'rgba(255,255,255,0.2)', minWidth:'36px', textAlign:'right'}}>{rank ? `${rank}/10` : '–'}</span>
                   </div>
                   <div className="relative py-2">
