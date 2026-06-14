@@ -1385,11 +1385,11 @@
         <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(160deg,#0f172a 0%,#020617 100%)'}}>
 
           {/* Header */}
-          <header className="flex items-center justify-center px-0 py-0 lg:py-5 border-b border-white/5">
+          <header className="flex items-center justify-center py-0 lg:py-5 border-b border-white/5 pt-[10px] lg:pt-0 px-[10px] lg:px-0">
 
             {/* Logo — color full-width on mobile, white fixed-height on desktop */}
-            {/* ⚠️ DO NOT add height/objectFit/margins here — clips the .org off the right edge every time */}
-            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full block md:hidden" style={{width:'100%', height:'auto', display:'block'}} />
+            {/* ⚠️ height:72px + objectFit:cover is correct. DO NOT add objectPosition or margins — that clips .org. DO NOT use height:auto — makes header giant on wide phones. DO NOT add display:block — overrides md:hidden. */}
+            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full block md:hidden" style={{width:'100%', height:'72px', objectFit:'cover'}} />
 
             {/* Desktop: logo + election info centered together as a unit */}
             <div className="hidden md:flex items-center gap-20 xl:gap-28">
@@ -1438,15 +1438,15 @@
               </div>
 
               {/* Desktop CTAs */}
-              <div className="hidden lg:flex flex-col gap-2.5 mt-8">
+              <div className="hidden lg:flex flex-col gap-2.5 mt-8 w-64">
                 {answeredCount === 0 && (
-                  <button onClick={() => onQuiz()} className="patriot-pulse w-fit py-2.5 px-8 font-black text-base uppercase tracking-widest rounded-full active:scale-[0.97]" style={{color:'#fff', letterSpacing:'0.12em'}}>
+                  <button onClick={() => onQuiz()} className="w-full py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97]" style={{background:'#2563eb', border:'1px solid #60a5fa', letterSpacing:'0.12em'}}>
                     Choose Your Views →
                   </button>
                 )}
                 {answeredCount > 0 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={onSummary} className="py-2.5 px-8 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-95 active:scale-[0.97]" style={{background:'#2563eb', letterSpacing:'0.12em'}}>
+                    <button onClick={onSummary} className="flex-1 py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-95 active:scale-[0.97]" style={{background:'#2563eb', letterSpacing:'0.12em'}}>
                       Build My Ballot ({answeredCount}/9) →
                     </button>
                     {confirmReset ? (
@@ -1466,36 +1466,11 @@
                     )}
                   </div>
                 )}
-                <div className={`relative w-fit ${!available ? 'opacity-40 pointer-events-none' : ''}`}>
-                  <div className="flex rounded-full overflow-hidden border border-slate-500">
-                    <button onClick={() => setShowBrowseDrop(d => !d)}
-                      className="py-2.5 px-8 font-black text-xs uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150"
-                      style={{letterSpacing:'0.12em'}}>
-                      Browse Candidates
-                    </button>
-                    <button onClick={() => setShowBrowseDrop(d => !d)}
-                      className="px-4 border-l border-slate-500 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center">
-                      <svg className={`w-3.5 h-3.5 transition-transform ${showBrowseDrop ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    </button>
-                  </div>
-                  {showBrowseDrop && (
-                    <div className="absolute top-full mt-1 left-0 right-0 rounded-2xl overflow-hidden shadow-xl z-20 border border-white/10"
-                      style={{background:'#1e293b'}}>
-                      <button onClick={() => { setShowBrowseDrop(false); onBrowse(); }}
-                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
-                        style={{letterSpacing:'0.1em'}}>
-                        All Candidates
-                      </button>
-                      <button onClick={() => { setShowBrowseDrop(false); setShowBrowseModal(true); }}
-                        className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
-                        style={{letterSpacing:'0.1em'}}>
-                        My Candidates
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <button onClick={() => onBrowse()} disabled={!available}
+                  className="w-full py-2.5 font-bold text-xs uppercase tracking-widest text-white rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
+                  style={{letterSpacing:'0.12em', background:'#b91c1c', border:'1px solid #ef4444'}}>
+                  Browse Candidates
+                </button>
               </div>
             </div>
 
@@ -1604,7 +1579,8 @@
 
           {/* Footer */}
           <footer className="px-4 lg:px-16 py-4 text-center">
-            <div><DataSourceBadge dataSource={dataSource} counties={counties} /></div>
+            {/* DataSourceBadge hidden — clutters UI */}
+            {false && <div><DataSourceBadge dataSource={dataSource} counties={counties} /></div>}
           </footer>
 
           {showBrowseModal && (
