@@ -79,6 +79,14 @@
     }
     @page { margin: 0.4in 0.4in 0.4in 0.4in; }
 
+    /* Ballot mobile responsive */
+    @media (max-width: 640px) {
+      .ballot-title { font-size: 24px !important; }
+      .ballot-subtitle { font-size: 12px !important; }
+      .ballot-matching { font-size: 22px !important; }
+      .ballot-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    }
+
     @media print {
       /* Hide everything except the ballot */
       .no-print { display: none !important; }
@@ -4006,10 +4014,10 @@
           <div style={{background:'#fff', padding:'4px 40px 8px'}}>
             <div style={{maxWidth:'900px', margin:'0 auto', textAlign:'center'}}>
               <img src="./icons/VoteYourViews_Logo_Black.png" alt="VoteYourViews" style={{height:'58px', display:'block', margin:'0 auto'}} />
-              <div className="font-black uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'40px', color:'#0f172a', letterSpacing:'0.04em', lineHeight:1, marginTop:'2px'}}>
+              <div className="ballot-title font-black uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'40px', color:'#0f172a', letterSpacing:'0.04em', lineHeight:1, marginTop:'2px'}}>
                 2026 Midterm Guide
               </div>
-              <div className="font-black uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'16px', color:'#2563eb', letterSpacing:'0.1em', marginTop:'2px'}}>
+              <div className="ballot-subtitle font-black uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'16px', color:'#2563eb', letterSpacing:'0.1em', marginTop:'2px'}}>
                 Early Voting: Oct 19–30 · Election Day: Nov 4, 2026
               </div>
             </div>
@@ -4019,7 +4027,7 @@
             {/* Your Matching Candidates label */}
             <div style={{textAlign:'center', marginBottom:'12px', marginTop:'6px', padding:'6px 0'}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'11px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.25em', color:'#94a3b8', marginBottom:'2px'}}>Your</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'32px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.12em', lineHeight:1, color:'#0f172a'}}>
+              <div className="ballot-matching" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'32px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.12em', lineHeight:1, color:'#0f172a'}}>
                 <span style={{color:'#2563eb'}}>Matching</span> Candidates
               </div>
             </div>
@@ -4036,7 +4044,7 @@
                   <div className="flex items-center gap-3 mb-1 pb-1" style={{borderBottom:'2px solid #0f172a'}}>
                     <div className="font-black uppercase tracking-widest" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'15px', color:'#0f172a', letterSpacing:'0.1em'}}>{sec.label}</div>
                   </div>
-                  <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(7, 1fr)'}}>
+                  <div className="ballot-grid grid gap-1.5" style={{gridTemplateColumns:'repeat(7, 1fr)'}}>
                     {sectionCandidates.map(({ race, candidate }) => {
               const partyColor = candidate.party === 'D' ? '#2563eb' : candidate.party === 'R' ? '#dc2626' : '#64748b';
                 const partyLabel = candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : candidate.party || 'Independent';
@@ -4079,27 +4087,35 @@
             })}
 
             {/* Polling locations — after candidates */}
-            <div style={{marginTop:'20px', borderTop:'2px solid #0f172a', paddingTop:'10px'}}>
-              {/* Header row */}
-              <div style={{marginBottom:'10px', marginTop:'20px', textAlign:'center'}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'11px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.25em', color:'#94a3b8', marginBottom:'2px'}}>Your Closest</div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'28px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.1em', lineHeight:1, color:'#0f172a'}}>
-                  <span style={{color:'#2563eb'}}>Polling</span> Locations
+            <div style={{marginTop:'24px', borderTop:'2px solid #0f172a', paddingTop:'16px'}}>
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:'16px'}}>
+                {/* Left: header + locations */}
+                <div style={{flex:1}}>
+                  <div style={{marginBottom:'10px'}}>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'10px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.25em', color:'#94a3b8', marginBottom:'2px'}}>Your Closest</div>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'22px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.08em', lineHeight:1, color:'#0f172a'}}>
+                      <span style={{color:'#2563eb'}}>Polling</span> Locations
+                    </div>
+                  </div>
+                  <div style={{display:'flex', flexDirection:'column', gap:'6px'}}>
+                    {[
+                      {name:'Dripping Springs High School', addr:'940 W Hwy 290, Dripping Springs, TX 78620'},
+                      {name:'Dripping Springs Ranch Park', addr:'1042 Event Center Dr, Dripping Springs, TX 78620'},
+                    ].map((loc, i) => (
+                      <div key={i} style={{display:'flex', alignItems:'flex-start', gap:'8px', background:'#f8fafc', borderRadius:'8px', padding:'8px 12px'}}>
+                        <span style={{fontSize:'16px', lineHeight:1, marginTop:'2px'}}>📍</span>
+                        <div>
+                          <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'14px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.05em', color:'#0f172a', lineHeight:1.1}}>{loc.name}</div>
+                          <div style={{fontSize:'11px', color:'#64748b', marginTop:'2px'}}>{loc.addr}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              {/* Location cards + QR */}
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:'10px', alignItems:'stretch'}}>
-                <div style={{border:'1.5px solid #0f172a', borderRadius:'8px', padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'22px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.05em', color:'#0f172a', lineHeight:1.1}}>Dripping Springs High School</div>
-                  <div style={{fontSize:'14px', color:'#64748b', marginTop:'4px'}}>940 W Hwy 290, Dripping Springs, TX 78620</div>
-                </div>
-                <div style={{border:'1.5px solid #0f172a', borderRadius:'8px', padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'22px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.05em', color:'#0f172a', lineHeight:1.1}}>Dripping Springs Ranch Park</div>
-                  <div style={{fontSize:'14px', color:'#64748b', marginTop:'4px'}}>1042 Event Center Dr, Dripping Springs, TX 78620</div>
-                </div>
-                <div style={{border:'1.5px solid #0f172a', borderRadius:'8px', padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'4px'}}>
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://voteyourviews.org" alt="QR code" style={{width:'64px', height:'64px', display:'block'}} />
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'9px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.1em', color:'#64748b', textAlign:'center'}}>More Locations</div>
+                {/* Right: QR code */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px', background:'#f8fafc', borderRadius:'10px', padding:'10px 12px', minWidth:'90px'}}>
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://www.harrisvotes.com/Voter/Find-Polling-Place" alt="Find polling place QR" style={{width:'72px', height:'72px', display:'block'}} />
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'8px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.1em', color:'#64748b', textAlign:'center', lineHeight:1.2}}>More<br/>Locations</div>
                 </div>
               </div>
             </div>
