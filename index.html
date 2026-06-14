@@ -28,7 +28,7 @@
   <style>
     body { font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; max-width: 100vw; }
     html { overflow-x: hidden; }
-    body { padding-bottom: env(safe-area-inset-bottom); }
+    body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .cand-summary { font-size: 16px; }
@@ -1379,7 +1379,7 @@
           <header className="flex items-center justify-center px-0 py-0 lg:py-5 border-b border-white/5">
 
             {/* Logo — color full-width on mobile, white fixed-height on desktop */}
-            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full h-auto block md:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)'}} />
+            <img src="./icons/VoteYourViews_ThinHeader1.png" alt="VoteYourViews.org" className="w-full h-auto block md:hidden" style={{marginTop:'5px', marginLeft:'5px', marginRight:'5px', width:'calc(100% - 10px)', maxHeight:'120px', objectFit:'cover', objectPosition:'center'}} />
 
             {/* Desktop: logo + election info centered together as a unit */}
             <div className="hidden md:flex items-center gap-20 xl:gap-28">
@@ -1558,13 +1558,13 @@
                 ) : (
                   <button onClick={available ? () => onQuiz(null) : undefined} disabled={!available}
                     className="w-full py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
-                    style={{background:'#2563eb', letterSpacing:'0.12em'}}>
+                    style={{background:'#2563eb', letterSpacing:'0.12em', border:'1px solid #60a5fa'}}>
                     Choose Your Views →
                   </button>
                 )}
                 <button onClick={available ? onBrowse : undefined} disabled={!available}
-                  className="w-full py-2.5 font-bold text-xs uppercase tracking-widest text-slate-300 hover:text-white rounded-full border border-slate-500 hover:bg-white/10 transition-all duration-150 disabled:opacity-40"
-                  style={{letterSpacing:'0.12em'}}>
+                  className="w-full py-2.5 font-bold text-xs uppercase tracking-widest text-white rounded-full transition-all duration-150 disabled:opacity-40 hover:opacity-90 active:scale-[0.97]"
+                  style={{letterSpacing:'0.12em', background:'#b91c1c', border:'1px solid #ef4444'}}>
                   Browse Candidates
                 </button>
               </div>
@@ -1593,11 +1593,8 @@
           </main>
 
           {/* Footer */}
-          <footer className="px-4 lg:px-16 py-4 text-center space-y-1">
+          <footer className="px-4 lg:px-16 py-4 text-center">
             <div><DataSourceBadge dataSource={dataSource} counties={counties} /></div>
-            <div className="text-slate-500 text-[10px]">
-              VoteYourViews.org · A <a href="https://stateoverparty.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-300">State Over Party</a> Initiative
-            </div>
           </footer>
 
           {showBrowseModal && (
@@ -1677,7 +1674,7 @@
       const [reactions, setReactions] = useState(() => initialReactions || {});
       const [rank, setRank] = useState(initialRank);
       const [showContext, setShowContext] = useState(false);
-      const statements0 = ISSUE_STATEMENTS[(issue || {}).topic] || [];
+      const statements0 = (ISSUE_STATEMENTS[(issue || {}).topic] || []).slice(0, 3);
       const [cardIndex, setCardIndex] = useState(() => (initialReactions && Object.keys(initialReactions).length > 0) ? statements0.length : 0);
       const [flash, setFlash] = useState(null); // 'up' | 'down' | null
 
@@ -1685,7 +1682,7 @@
 
       if (!issue) return null;
 
-      const statements = ISSUE_STATEMENTS[issue.topic] || [];
+      const statements = (ISSUE_STATEMENTS[issue.topic] || []).slice(0, 3);
       const ACCENT = '#f59e0b';
       const anyReacted = Object.keys(reactions).length > 0;
 
