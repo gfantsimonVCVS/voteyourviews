@@ -38,6 +38,8 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .slide-in { animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1); }
     @keyframes slideIn { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .issue-enter { animation: issueEnter 0.45s cubic-bezier(0.22,1,0.36,1); }
+    @keyframes issueEnter { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
     .patriot-pulse {
       animation: patriotPulse 2.8s ease-in-out infinite;
       border: 3px solid #3b82f6;
@@ -124,8 +126,8 @@
       /* Compact photo size for print */
       .rounded-full { width: 48px !important; height: 48px !important; }
 
-      /* Don't break sections across pages */
-      .rounded-2xl { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8px !important; }
+      /* Don't break individual candidate cards */
+      .rounded-xl { break-inside: avoid; page-break-inside: avoid; }
 
       /* Page setup */
       @page { margin: 0.5in; size: letter; }
@@ -257,6 +259,9 @@
     }
 
     // Temporary Hook 1 / Hook 2 copy until the sheet gets `hook1` and `hook2` columns
+    const PHOTO_FALLBACK = {
+      'James Talarico': 'https://lh3.googleusercontent.com/d/1xT_tzvyzpedvvRDZJ3V09TqjcoTiPiDO',
+    };
     const HOOK1_FALLBACK = {
       'James Talarico': 'A former middle-school teacher who gave up a safe seat to bet his career on the hardest race in Texas.',
       'Ken Paxton': 'Impeached by his own party, acquitted by the Senate — and still standing. Few politicians have survived more.',
@@ -307,7 +312,7 @@
           confirmed: ['true','yes','TRUE','Yes'].includes(row.confirmed),
           uncontested: ['true','yes','TRUE','Yes'].includes(row.uncontested),
           website: row.website || null,
-          photo: row.photo || null,
+          photo: row.photo || PHOTO_FALLBACK[row.name] || null,
           summary: row.hook2 || HOOK2_FALLBACK[row.name] || row.summary || '',
           hook: row.hook1 || HOOK1_FALLBACK[row.name] || null,
           positions,
@@ -884,15 +889,37 @@
       return Math.round((weightedScore / weightedTotal) * 100);
     }
 
-    function matchedIssues(candidate, answers, issues) {
-      return issues.map(issue => ({
-        ...issue,
-        answered: issue.id in answers && answers[issue.id] !== 'D',
-        matched: answers[issue.id] === candidate.positions[issue.id],
-        partial: answers[issue.id] === 'B',
-        userChoice: answers[issue.id],
-        candidateChoice: candidate.positions[issue.id]
-      })).filter(i => i.answered);
+    function deriveVoterPos(issueId, answers, checkedStatements) {
+      const ans = answers?.[issueId];
+      if (!ans || ans === 'D') return ans || null;
+      if (ans !== 'S') return ans; // legacy A/B/C
+      const stmtData = checkedStatements?.[issueId];
+      if (!stmtData?.reactions) return null;
+      const reactions = stmtData.reactions;
+      const total = Object.keys(reactions).length;
+      if (total === 0) return null;
+      const agrees = Object.values(reactions).filter(r => r === 'up').length;
+      const disagrees = total - agrees;
+      const voice = ISSUE_VOICE[issueId] || 'LEFT';
+      const aRate = voice === 'LEFT' ? agrees / total : disagrees / total;
+      const cRate = voice === 'RIGHT' ? agrees / total : disagrees / total;
+      if (aRate >= 0.67) return 'A';
+      if (cRate >= 0.67) return 'C';
+      return 'B';
+    }
+
+    function matchedIssues(candidate, answers, checkedStatements, issues) {
+      return issues.map(issue => {
+        const userChoice = deriveVoterPos(issue.id, answers, checkedStatements);
+        return {
+          ...issue,
+          answered: issue.id in answers && answers[issue.id] !== 'D',
+          matched: userChoice === candidate.positions[issue.id],
+          partial: userChoice === 'B',
+          userChoice,
+          candidateChoice: candidate.positions[issue.id]
+        };
+      }).filter(i => i.answered);
     }
 
     function formatOfficeLines(office) {
@@ -1416,7 +1443,7 @@
           </div>
 
           {/* Main — two-column on desktop, stacked on mobile */}
-          <main className="relative flex flex-col lg:flex-row items-center justify-center px-4 lg:px-16 xl:px-28 pt-1 pb-4 lg:py-16 gap-3 lg:gap-20 fade-in">
+          <main className="relative flex flex-col lg:flex-row items-center justify-center px-4 lg:px-16 xl:px-28 pt-1 pb-4 lg:pt-[50px] lg:pb-16 gap-3 lg:gap-20 fade-in">
 
             {/* ── Left col (desktop) / Top (mobile): Headline + description + CTAs ── */}
             <div className="w-full max-w-xs lg:max-w-none lg:w-fit lg:shrink-0 flex flex-col items-center lg:items-start text-center lg:text-left">
@@ -1440,9 +1467,12 @@
               {/* Desktop CTAs */}
               <div className="hidden lg:flex flex-col gap-2.5 mt-8 w-64">
                 {answeredCount === 0 && (
-                  <button onClick={() => onQuiz()} className="w-full py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97]" style={{background:'#2563eb', border:'1px solid #60a5fa', letterSpacing:'0.12em'}}>
-                    Choose Your Views →
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => onQuiz()} className="flex-1 py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97]" style={{background:'#2563eb', border:'1px solid #60a5fa', letterSpacing:'0.12em'}}>
+                      Choose Your Views →
+                    </button>
+                    <div className="shrink-0 w-11 h-11" />
+                  </div>
                 )}
                 {answeredCount > 0 && (
                   <div className="flex items-center gap-2">
@@ -1466,11 +1496,14 @@
                     )}
                   </div>
                 )}
-                <button onClick={() => onBrowse()} disabled={!available}
-                  className="w-full py-2.5 font-bold text-xs uppercase tracking-widest text-white rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
-                  style={{letterSpacing:'0.12em', background:'#b91c1c', border:'1px solid #ef4444'}}>
-                  Browse Candidates
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onBrowse()} disabled={!available}
+                    className="flex-1 py-2.5 font-bold text-xs uppercase tracking-widest text-white rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
+                    style={{letterSpacing:'0.12em', background:'#b91c1c', border:'1px solid #ef4444'}}>
+                    Compare Candidates
+                  </button>
+                  <div className="shrink-0 w-11 h-11" />
+                </div>
               </div>
             </div>
 
@@ -1541,17 +1574,23 @@
                     )}
                   </div>
                 ) : (
-                  <button onClick={available ? () => onQuiz(null) : undefined} disabled={!available}
-                    className="w-full py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
-                    style={{background:'#2563eb', letterSpacing:'0.12em', border:'1px solid #60a5fa'}}>
-                    Choose Your Views →
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={available ? () => onQuiz(null) : undefined} disabled={!available}
+                      className="flex-1 py-2.5 text-white font-black text-xs uppercase tracking-widest rounded-full transition-all duration-150 hover:opacity-90 active:scale-[0.97] disabled:opacity-40"
+                      style={{background:'#2563eb', letterSpacing:'0.12em', border:'1px solid #60a5fa'}}>
+                      Choose Your Views →
+                    </button>
+                    <div className="shrink-0 w-11 h-11" />
+                  </div>
                 )}
-                <button onClick={available ? onBrowse : undefined} disabled={!available}
-                  className="w-full py-2.5 font-bold text-xs uppercase tracking-widest text-white rounded-full transition-all duration-150 disabled:opacity-40 hover:opacity-90 active:scale-[0.97]"
-                  style={{letterSpacing:'0.12em', background:'#b91c1c', border:'1px solid #ef4444'}}>
-                  Browse Candidates
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={available ? onBrowse : undefined} disabled={!available}
+                    className="flex-1 py-2.5 font-bold text-xs uppercase tracking-widest text-white rounded-full transition-all duration-150 disabled:opacity-40 hover:opacity-90 active:scale-[0.97]"
+                    style={{letterSpacing:'0.12em', background:'#b91c1c', border:'1px solid #ef4444'}}>
+                    Compare Candidates
+                  </button>
+                  <div className="shrink-0 w-11 h-11" />
+                </div>
               </div>
             </div>
 
@@ -1663,6 +1702,7 @@
       const statements0 = (ISSUE_STATEMENTS[(issue || {}).topic] || []).slice(0, 3);
       const [cardIndex, setCardIndex] = useState(() => (initialReactions && Object.keys(initialReactions).length > 0) ? statements0.length : 0);
       const [flash, setFlash] = useState(null); // 'up' | 'down' | null
+      const [skippedSet, setSkippedSet] = useState({});
 
       useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -1680,12 +1720,18 @@
         setTimeout(() => {
           setFlash(null);
           setReactions(prev => ({ ...prev, [i]: dir }));
+          setSkippedSet(prev => { const n = {...prev}; delete n[i]; return n; });
           setCardIndex(i + 1);
         }, 320);
       }
 
       function skipCard() {
-        setCardIndex(cardIndex + 1);
+        setSkippedSet(prev => ({ ...prev, [cardIndex]: true }));
+        if (cardIndex + 1 >= statements.length && !anyReacted) {
+          handleSkip();
+        } else {
+          setCardIndex(cardIndex + 1);
+        }
       }
 
       function handleSkip() {
@@ -1762,7 +1808,7 @@
           )}
 
           {/* Card area */}
-          <div className="flex-1 flex flex-col items-center justify-start max-w-lg mx-auto w-full px-4 py-4 fade-in">
+          <div key={issue.id} className="flex-1 flex flex-col items-center justify-start max-w-lg lg:max-w-3xl mx-auto w-full px-4 py-4 issue-enter">
 
             {!allDone ? (
               <>
@@ -1773,13 +1819,13 @@
                     onError={e => { e.target.style.display='none'; }} />
                   <div className="flex-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5" style={{color:'rgba(255,255,255,0.4)'}}>Views on</p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <p className="text-white font-black uppercase leading-tight text-[20px] lg:text-[26px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.04em'}}>{issue.topic}</p>
                       {(issue.hoverDesc || issue.fact) && (
                         <button onClick={() => setShowContext(true)}
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all hover:opacity-80 shrink-0"
-                          style={{background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.25)'}}>
-                          i
+                          className="text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-125 active:scale-95 px-3 py-1 rounded-full shrink-0"
+                          style={{background:'rgba(217,119,6,0.2)', color:'#f59e0b', border:'1px solid rgba(217,119,6,0.5)', letterSpacing:'0.12em'}}>
+                          ★ Get the Facts
                         </button>
                       )}
                     </div>
@@ -1792,51 +1838,82 @@
                     const r = reactions[i];
                     const isOpen = i === cardIndex;
                     const isDone = r !== undefined;
+                    const wasSkipped = !isDone && skippedSet[i];
+                    const isAnswered = !isOpen && (isDone || wasSkipped);
                     return (
                       <div key={i} onClick={() => !isOpen && setCardIndex(i)}
                         className="w-full rounded-2xl overflow-hidden transition-all duration-300"
                         style={{
-                          border: isOpen ? '1.5px solid rgba(255,255,255,0.25)' : '1.5px solid rgba(255,255,255,0.08)',
-                          background: isOpen ? 'linear-gradient(160deg,rgba(99,102,241,0.2),rgba(255,255,255,0.06))' : 'rgba(255,255,255,0.03)',
+                          border: isOpen ? '1.5px solid rgba(255,255,255,0.25)' : wasSkipped ? '1.5px solid rgba(255,255,255,0.15)' : '1.5px solid rgba(255,255,255,0.08)',
+                          background: isOpen ? 'linear-gradient(160deg,rgba(99,102,241,0.2),rgba(255,255,255,0.06))' : wasSkipped ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
                           cursor: isOpen ? 'default' : 'pointer',
                         }}>
                         {/* Row header — always visible */}
-                        <div className="flex items-center gap-3 px-4 py-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-black"
+                        <div className={`flex items-center gap-3 px-4 py-2.5 ${isOpen ? 'lg:px-12 lg:pt-4 lg:pb-0' : 'lg:px-12'} ${!isOpen ? 'justify-center' : ''}`}>
+                          <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-full flex items-center justify-center shrink-0 text-xs lg:text-sm font-black"
                             style={{
-                              background: r === 'up' ? '#22c55e' : r === 'down' ? '#ef4444' : isOpen ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)',
-                              color: isDone ? '#fff' : isOpen ? '#f59e0b' : 'rgba(255,255,255,0.4)',
+                              background: r === 'up' ? '#22c55e' : r === 'down' ? '#ef4444' : wasSkipped ? 'rgba(255,255,255,0.12)' : isOpen ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)',
+                              color: isDone ? '#fff' : wasSkipped ? 'rgba(255,255,255,0.5)' : isOpen ? '#f59e0b' : 'rgba(255,255,255,0.4)',
                               border: isOpen && !isDone ? '1.5px solid #f59e0b' : 'none',
                             }}>
-                            {r === 'up' ? '✓' : r === 'down' ? '✕' : i + 1}
+                            {r === 'up' ? '✓' : r === 'down' ? '✕' : wasSkipped ? '⏭' : i + 1}
                           </div>
-                          <p className="text-xs font-bold uppercase tracking-widest"
-                            style={{color: isOpen ? 'rgba(255,255,255,0.5)' : isDone ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.25)'}}>
-                            {isOpen ? `Statement ${i + 1}` : isDone ? (r === 'up' ? 'Agreed' : 'Disagreed') : `Statement ${i + 1}`}
+                          <p className="text-xs lg:text-sm font-bold uppercase tracking-widest"
+                            style={{color: isOpen ? 'rgba(255,255,255,0.5)' : isDone ? 'rgba(255,255,255,0.35)' : wasSkipped ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.25)'}}>
+                            {isOpen ? `Statement ${i + 1}` : isDone ? (r === 'up' ? 'Agreed' : 'Disagreed') : wasSkipped ? 'Skipped' : `Statement ${i + 1}`}
                           </p>
                         </div>
 
                         {/* Expanded content */}
                         {isOpen && (
-                          <div key={cardIndex} className="px-4 pb-4 slide-in">
-                            <p className="text-white font-medium leading-snug text-[16px] lg:text-[18px] mb-4">
-                              "{stmt.split(/\b([A-Z]{2,})\b/).map((part, pi) =>
-                                /^[A-Z]{2,}$/.test(part) ? <strong key={pi}>{part}</strong> : part
-                              )}"
-                            </p>
+                          <div key={cardIndex} className="px-4 pb-4 slide-in lg:flex lg:items-start lg:gap-10 lg:px-12 lg:pt-2 lg:pb-6 lg:pr-12">
+                            <div className="lg:flex-1">
+                              <p className="text-white font-medium leading-snug text-[16px] lg:text-[20px] mb-4 lg:mb-0">
+                                "{stmt.split(/\b([A-Z]{2,})\b/).map((part, pi) =>
+                                  /^[A-Z]{2,}$/.test(part) ? <strong key={pi}>{part}</strong> : part
+                                )}"
+                              </p>
+                              {cardIndex > 0 && (
+                                <button onClick={() => setCardIndex(cardIndex - 1)}
+                                  className="mt-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all hidden lg:block"
+                                  style={{color:'rgba(255,255,255,0.4)'}}>
+                                  ← Change previous answer
+                                </button>
+                              )}
+                            </div>
+                            {/* Mobile: change previous answer above buttons */}
                             {cardIndex > 0 && (
                               <button onClick={() => setCardIndex(cardIndex - 1)}
-                                className="mb-3 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all"
+                                className="mb-3 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all lg:hidden"
                                 style={{color:'rgba(255,255,255,0.4)'}}>
                                 ← Change previous answer
                               </button>
                             )}
-                            <div className="flex gap-2 justify-center">
-                              <button onClick={() => react('up')} className="transition-all hover:opacity-90 active:scale-95" style={{width:'42.5%'}}>
-                                <img src="./icons/agree.png" alt="Agree" className="w-full" style={{maxHeight:'51px', objectFit:'contain'}} />
+                            {/* Mobile buttons */}
+                            <div className="flex gap-2 justify-center lg:hidden">
+                              <button onClick={() => react('up')} className="flex items-center justify-center gap-1.5 rounded-full font-black text-xs uppercase tracking-widest text-white transition-all hover:brightness-125 active:scale-95" style={{width:'42.5%', height:'38px', background:'#16a34a', border:'1px solid #4ade80', opacity: r === 'down' ? 0.3 : 1, boxShadow: r === 'up' ? '0 0 0 2px rgba(255,255,255,0.8)' : 'none', letterSpacing:'0.1em'}}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)"><path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.88v-2c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 2 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1.91l-.01-.01.84.61z"/></svg>
+                                Agree
                               </button>
-                              <button onClick={() => react('down')} className="transition-all hover:opacity-90 active:scale-95" style={{width:'42.5%'}}>
-                                <img src="./icons/disagree.png" alt="Disagree" className="w-full" style={{maxHeight:'51px', objectFit:'contain'}} />
+                              <button onClick={() => react('down')} className="flex items-center justify-center gap-1.5 rounded-full font-black text-xs uppercase tracking-widest text-white transition-all hover:brightness-125 active:scale-95" style={{width:'42.5%', height:'38px', background:'#b91c1c', border:'1px solid #ef4444', opacity: r === 'up' ? 0.3 : 1, boxShadow: r === 'down' ? '0 0 0 2px rgba(255,255,255,0.8)' : 'none', letterSpacing:'0.1em'}}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)"><path d="M22 4h-2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2V4zM2.17 11.12c-.11.25-.17.52-.17.88v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 22l5.59-5.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2H6c-.83 0-1.54.5-1.84 1.22L1.14 13.27c-.09.23-.14.47-.14.73v1.91l.01.01-.84-.6z"/></svg>
+                                Disagree
+                              </button>
+                            </div>
+                            {/* Desktop buttons */}
+                            <div className="hidden lg:flex flex-col gap-2 shrink-0 items-center">
+                              <button onClick={() => react('up')} className="flex items-center justify-center gap-1.5 rounded-full font-black text-xs uppercase tracking-widest text-white transition-all hover:brightness-125 active:scale-95" style={{width:'148px', height:'38px', background:'#16a34a', border:'1px solid #4ade80', opacity: r === 'down' ? 0.3 : 1, boxShadow: r === 'up' ? '0 0 0 2px rgba(255,255,255,0.8)' : 'none', letterSpacing:'0.1em'}}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)"><path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.88v-2c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 2 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1.91l-.01-.01.84.61z"/></svg>
+                                Agree
+                              </button>
+                              <button onClick={() => react('down')} className="flex items-center justify-center gap-1.5 rounded-full font-black text-xs uppercase tracking-widest text-white transition-all hover:brightness-125 active:scale-95" style={{width:'148px', height:'38px', background:'#b91c1c', border:'1px solid #ef4444', opacity: r === 'up' ? 0.3 : 1, boxShadow: r === 'down' ? '0 0 0 2px rgba(255,255,255,0.8)' : 'none', letterSpacing:'0.1em'}}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)"><path d="M22 4h-2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2V4zM2.17 11.12c-.11.25-.17.52-.17.88v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 22l5.59-5.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2H6c-.83 0-1.54.5-1.84 1.22L1.14 13.27c-.09.23-.14.47-.14.73v1.91l.01.01-.84-.6z"/></svg>
+                                Disagree
+                              </button>
+                              <button onClick={skipCard}
+                                className="mt-1 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 px-4 py-1.5 rounded-full hover:border-white hover:text-white"
+                                style={{color: skippedSet[cardIndex] ? '#fff' : 'rgba(255,255,255,0.5)', border: skippedSet[cardIndex] ? '1px solid rgba(255,255,255,0.9)' : '1px solid rgba(255,255,255,0.2)', boxShadow: skippedSet[cardIndex] ? '0 0 0 1px rgba(255,255,255,0.4)' : 'none'}}>
+                                ⏭ Skip
                               </button>
                             </div>
                           </div>
@@ -1849,22 +1926,22 @@
                 {/* Build My Ballot shortcut */}
                 {Object.keys(answers).length > 0 && onSummary && (
                   <button onClick={onSummary}
-                    className="mt-2 w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-95"
-                    style={{background:'#2563eb', color:'#fff', letterSpacing:'0.1em'}}>
+                    className="mt-2 w-full lg:w-96 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-95 lg:self-center"
+                    style={{background:'#2563eb', border:'1px solid #60a5fa', color:'#fff', letterSpacing:'0.1em'}}>
                     Build My Ballot ({Object.keys(answers).length}/9) →
                   </button>
                 )}
 
                 {/* Skip issue */}
                 <button onClick={handleSkip}
-                  className="mt-2 mb-4 w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-80 active:scale-95"
-                  style={{color:'rgba(255,255,255,0.85)', border:'1px solid rgba(255,255,255,0.5)', letterSpacing:'0.1em'}}>
+                  className="mt-2 mb-4 w-full lg:w-96 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:border-white hover:text-white active:scale-95 lg:self-center"
+                  style={{color:'rgba(255,255,255,0.5)', border:'1px solid rgba(255,255,255,0.2)', letterSpacing:'0.1em'}}>
                   This issue doesn't affect my vote
                 </button>
               </>
             ) : (
-              /* All 4 done — show slider + next */
-              <div className="w-full flex flex-col gap-3 py-2 fade-in">
+              /* All done — show slider + next */
+              <div className="w-full max-w-xl mx-auto flex flex-col gap-3 py-2 fade-in">
                 {/* Issue header */}
                 <div className="w-full flex items-center gap-4 px-1 pb-1">
                   <img src={`./icons/symbols/${issue.symbol}.png`} alt={issue.topic}
@@ -1872,22 +1949,31 @@
                     onError={e => { e.target.style.display='none'; }} />
                   <div className="flex-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5" style={{color:'rgba(255,255,255,0.4)'}}>Views on</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-white font-black uppercase leading-tight text-[20px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.04em'}}>{issue.topic}</p>
-                    </div>
+                    <p className="text-white font-black uppercase leading-tight text-[20px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.04em'}}>{issue.topic}</p>
                   </div>
                 </div>
-                {/* Summary of reactions */}
+                {/* Compact clickable statement rows */}
                 <div className="flex flex-col gap-1 mb-1">
                   {statements.map((stmt, i) => {
                     const r = reactions[i];
-                    if (!r) return null;
+                    const skipped = !r;
                     return (
-                      <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl"
-                        style={{background: r === 'up' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}}>
-                        <img src={r === 'up' ? './icons/thumbs_up.png' : './icons/thumbs_down.png'} alt={r === 'up' ? 'Agree' : 'Disagree'} style={{width:'20px', height:'20px', objectFit:'contain', flexShrink:0, marginTop:'1px'}} />
-                        <p className="text-[12px] leading-snug" style={{color:'rgba(255,255,255,0.7)'}}>{stmt}</p>
-                      </div>
+                      <button key={i} onClick={() => setCardIndex(i)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:brightness-110 active:scale-[0.99]"
+                        style={{background: skipped ? 'rgba(255,255,255,0.04)' : r === 'up' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}}>
+                        {skipped
+                          ? <span style={{width:'20px', height:'20px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', flexShrink:0}}>⏭</span>
+                          : <img src={r === 'up' ? './icons/thumbs_up.png' : './icons/thumbs_down.png'} alt={r === 'up' ? 'Agree' : 'Disagree'} style={{width:'20px', height:'20px', objectFit:'contain', flexShrink:0}} />
+                        }
+                        <span className="text-[13px] font-semibold" style={{color:'rgba(255,255,255,0.5)'}}>Statement {i+1}</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest ml-auto">
+                          {skipped
+                            ? <><span style={{color:'rgba(255,255,255,0.25)'}}>Skipped</span><span style={{color:'rgba(255,255,255,0.55)'}}> · answer</span></>
+
+                            : <><span style={{color: r === 'up' ? '#22c55e' : '#ef4444'}}>{r === 'up' ? 'Agreed' : 'Disagreed'}</span><span style={{color:'#d97706'}}> · change</span></>
+                          }
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
@@ -1917,7 +2003,7 @@
 
                 {rank && (
                   <button onClick={handleSave}
-                    className="w-full py-4 rounded-full text-sm font-black text-white uppercase tracking-widest transition-all hover:opacity-90"
+                    className="w-full lg:w-96 lg:self-center py-4 rounded-full text-sm font-black text-white uppercase tracking-widest transition-all hover:opacity-90"
                     style={{background:`linear-gradient(90deg,#b45309,${ACCENT})`, letterSpacing:'0.12em'}}>
                     Next Issue →
                   </button>
@@ -1925,7 +2011,7 @@
 
                 {Object.keys(answers).length > 0 && onSummary && (
                   <button onClick={onSummary}
-                    className="w-full py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-95"
+                    className="w-full lg:w-96 lg:self-center py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-95"
                     style={{background:'#2563eb', color:'#fff', letterSpacing:'0.1em'}}>
                     Build My Ballot ({Object.keys(answers).length}/9) →
                   </button>
@@ -2113,7 +2199,7 @@
                         <button onClick={() => { setShowDrop(false); onMatchAll(); }}
                           className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
                           style={{letterSpacing:'0.1em'}}>
-                          Browse Candidates
+                          Compare Candidates
                         </button>
                         <button onClick={() => { setShowDrop(false); setShowAddressModal(true); }}
                           className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
@@ -2559,52 +2645,99 @@
       const [profileData, setProfileData] = React.useState(null); // { candidate, race }
       const [compareRace, setCompareRace] = React.useState(null); // race object for RaceDetail overlay
       const [showFilterModal, setShowFilterModal] = React.useState(false);
+      const [activeTab, setActiveTab] = React.useState('federal');
 
       const answeredCount = Object.keys(answers).filter(id => answers[id] !== 'D').length;
+
+      const TABS = [
+        { key: 'federal',  label: 'Federal' },
+        { key: 'state',    label: 'State' },
+        { key: 'county',   label: 'County' },
+        { key: 'judicial', label: 'Judicial' },
+      ];
 
       return (
         <React.Fragment>
         <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(160deg,#1e1b4b 0%,#0f172a 60%,#0c1a2e 100%)'}}>
-          {/* Nav */}
-          <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-10" style={{background:'rgba(15,23,42,0.95)'}}>
-            <button onClick={onRetake} className="text-sm text-white font-black hover:opacity-80 uppercase tracking-widest" style={{letterSpacing:'0.08em'}}>← Back</button>
-            <span className="text-xs font-black text-white uppercase tracking-widest">Your Matches</span>
-            <button onClick={onBallot} className="text-xs font-black text-white uppercase tracking-widest px-3 py-1.5 rounded-full hover:opacity-80" style={{background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)'}}>Print →</button>
-          </div>
 
-          {/* Address filter banner */}
-          <div className="max-w-lg mx-auto w-full px-4 pt-3">
-            {userDistricts ? (
-              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl" style={{background:'linear-gradient(90deg,#14532d,#16a34a)', color:'#fff'}}>
-                <div className="flex items-center gap-2">
-                  <span style={{fontSize:'18px'}}>📍</span>
+          {/* Header — matches Compare Page */}
+          <header className="sticky top-0 z-10" style={{background:'#0f172a', borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
+            {/* Mobile */}
+            <div className="lg:hidden px-4 py-3.5">
+              <div className="flex items-center justify-center relative">
+                <button onClick={onRetake} className="absolute left-0 text-sm font-medium flex items-center gap-1" style={{color:'#94a3b8'}}>← Back</button>
+                <div className="text-xs font-black uppercase tracking-widest" style={{color:'#64748b', letterSpacing:'0.15em'}}>{counties[county].name} <span style={{color:'#d97706'}}>Beta V1</span></div>
+              </div>
+              <div className="mt-3 flex gap-1 p-1 rounded-xl" style={{background:'#0f172a'}}>
+                {TABS.map(tab => {
+                  const isActive = tab.key === activeTab;
+                  return (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                      className="flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-tight transition-all duration-150"
+                      style={isActive ? {background:'#fff', color:'#0f172a', boxShadow:'0 2px 8px rgba(0,0,0,0.25)'} : {background:'transparent', color:'#94a3b8'}}>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Desktop */}
+            <div className="hidden lg:flex items-center h-16 px-8 relative">
+              <button onClick={onRetake} className="absolute left-8 text-sm font-semibold flex items-center gap-1.5 transition-colors" style={{color:'#94a3b8'}}>← Back</button>
+              <div className="flex gap-2 mx-auto">
+                {TABS.map(tab => {
+                  const isActive = tab.key === activeTab;
+                  return (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                      className="px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest transition-all duration-150"
+                      style={isActive ? {background:'#fff', color:'#0f172a', boxShadow:'0 2px 12px rgba(0,0,0,0.3)'} : {background:'transparent', color:'#64748b'}}>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="absolute right-8 text-xs font-black uppercase tracking-widest" style={{color:'#64748b', letterSpacing:'0.15em'}}>{counties[county].name} <span style={{color:'#d97706'}}>Beta V1</span></div>
+            </div>
+          </header>
+
+          {/* 3-item action row: Address | Compare Opponents | Save Ballot */}
+          <div className="max-w-5xl mx-auto w-full px-4 pt-3 flex items-stretch gap-3">
+            {/* Address filter */}
+            <div className="flex-1">
+              {userDistricts ? (
+                <div className="h-full flex items-center gap-2 px-4 py-3 rounded-2xl" style={{background:'linear-gradient(90deg,#14532d,#16a34a)', color:'#fff'}}>
+                  <span style={{fontSize:'16px'}}>📍</span>
                   <div>
-                    <div className="text-[11px] font-bold uppercase tracking-widest opacity-75">Showing your candidates</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-75">Showing your candidates</div>
                     <div className="text-sm font-black uppercase tracking-wide">{counties[county].name}</div>
                   </div>
+                  <button onClick={() => setUserDistricts(null)} className="ml-auto text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full" style={{background:'rgba(255,255,255,0.2)', color:'#fff'}}>✕ Clear</button>
                 </div>
-                <button onClick={() => setUserDistricts(null)}
-                  className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full"
-                  style={{background:'rgba(255,255,255,0.2)', color:'#fff'}}>
-                  ✕ Clear
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setShowFilterModal(true)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[0.98]"
-                style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb)', color:'#fff'}}>
-                <div className="flex items-center gap-2">
-                  <span style={{fontSize:'18px'}}>📍</span>
+              ) : (
+                <button onClick={() => setShowFilterModal(true)}
+                  className="w-full h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[0.98]"
+                  style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb)', color:'#fff'}}>
+                  <span style={{fontSize:'16px'}}>📍</span>
                   <div className="text-left">
-                    <div className="text-[11px] font-bold uppercase tracking-widest opacity-75">Filter by your address</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-75">Filter by your address</div>
                     <div className="text-sm font-black uppercase tracking-wide">Show My Candidates Only</div>
                   </div>
-                </div>
-                <svg className="w-5 h-5 opacity-80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
-              </button>
-            )}
+                  <svg className="w-4 h-4 opacity-80 shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+              )}
+            </div>
+            {/* Compare Opponents */}
+            <button onClick={onBrowse}
+              className="flex items-center justify-center px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:brightness-110 active:scale-95"
+              style={{background:'#1e293b', color:'#94a3b8', border:'1.5px solid #334155', letterSpacing:'0.08em', minWidth:'160px'}}>
+              Compare Opponents
+            </button>
+            {/* Save Ballot */}
+            <button onClick={onBallot}
+              className="flex items-center justify-center px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:brightness-110 active:scale-95"
+              style={{background:'#1e293b', color:'#94a3b8', border:'1.5px solid #334155', letterSpacing:'0.08em', minWidth:'140px'}}>
+              Save Ballot
+            </button>
           </div>
 
           {showFilterModal && (
@@ -2617,26 +2750,12 @@
             />
           )}
 
-          <div className="flex-1 max-w-lg mx-auto w-full px-4 py-4">
+          <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-4">
 
-            {/* Primary CTAs */}
-            <div className="flex gap-3 mb-6">
-              <button onClick={onBrowse}
-                className="flex-1 py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', color:'#fff', letterSpacing:'0.08em'}}>
-                ⇄ Compare
-              </button>
-              <button onClick={() => generateBallotPDF(countyData, selected, userDistricts)}
-                className="flex-1 py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{background:'linear-gradient(90deg,#1d4ed8,#7c3aed)', color:'#fff', letterSpacing:'0.08em'}}>
-                🖨 Save / Print
-              </button>
-            </div>
-
-            {RACE_SECTIONS.filter(sec => filterRacesByDistrict(countyData[sec.key] || [], userDistricts).length > 0).map((sec, idx) => {
-              const sectionRaces = filterRacesByDistrict(countyData[sec.key] || [], userDistricts);
-              return (
-              <ResultsSection key={sec.key} sec={sec} sectionRaces={sectionRaces} answers={answers} checkedStatements={checkedStatements} ranks={ranks} selected={selected} idx={idx} onOpen={race => {
+            {(() => {
+              const sectionRaces = filterRacesByDistrict(countyData[activeTab] || [], userDistricts);
+              return sectionRaces.map(race => {
+                const onOpen = race => {
                     const cands = race.candidates.filter(Boolean);
                     const scores = cands.map(c => ({ c, s: calcMatch(c, answers, checkedStatements, ranks) }));
                     const best = scores.reduce((a, b) => (b.s !== null && (a.s === null || b.s > a.s)) ? b : a, scores[0]);
@@ -2650,54 +2769,120 @@
                     const ISSUE_KEYS = ['reproductiveRights','immigration','gunPolicy','education','healthcare','climate','moneyInPolitics','socialSecurity','affordability'];
                     const isJudicialRace = race.category === 'judicial' || (displayCand && !ISSUE_KEYS.some(k => displayCand.positions?.[k] && displayCand.positions[k] !== 'D'));
 
+                    const isOnBallot = selected[race.office] === displayCand?.name || (!selected[race.office] && !isOverridden && !!cand);
+                    const scoreColor = displayScore >= 70 ? '#22c55e' : displayScore >= 40 ? '#f59e0b' : '#ef4444';
+
                     return (
-                      <button key={race.office} onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
-                        className="w-full text-left rounded-2xl p-3 flex items-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
-                        style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}>
-                        {/* Photo */}
-                        <div className="shrink-0 w-14 h-14 rounded-full overflow-hidden" style={{border:`2px solid ${partyColor}`}}>
-                          {displayCand?.photo
-                            ? <img src={displayCand.photo} alt={displayCand.name} className="w-full h-full object-cover" style={{objectPosition:'center 5%'}} onError={e => e.target.style.display='none'} />
-                            : <div className="w-full h-full flex items-center justify-center text-white font-black text-lg" style={{background: partyColor + '33'}}>{getInitials(displayCand?.name || '')}</div>
-                          }
+                      <div key={race.office} className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}>
+
+                        {/* ── MOBILE layout ── */}
+                        <button onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
+                          className="lg:hidden w-full text-left p-3 flex items-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]">
+                          <div className="shrink-0 w-14 h-14 rounded-full overflow-hidden" style={{border:`2px solid ${partyColor}`}}>
+                            {displayCand?.photo
+                              ? <img src={displayCand.photo} alt={displayCand.name} className="w-full h-full object-cover" style={{objectPosition:'center 5%'}} onError={e => e.target.style.display='none'} />
+                              : <div className="w-full h-full flex items-center justify-center text-white font-black text-lg" style={{background: partyColor + '33'}}>{getInitials(displayCand?.name || '')}</div>
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest mb-0.5 leading-tight" style={{color:'rgba(255,255,255,0.35)'}}>
+                              {formatOfficeLines(race.office).map((line, i) => <span key={i} className="block">{line}</span>)}
+                            </p>
+                            <p className="text-white font-black text-base leading-tight">{displayCand?.name}</p>
+                            <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
+                              style={{background: partyColor + '28', color: partyColor, border: `1px solid ${partyColor}55`}}>
+                              {displayCand?.party === 'D' ? 'Democrat' : displayCand?.party === 'R' ? 'Republican' : 'Independent'}
+                            </span>
+                          </div>
+                          <div className="shrink-0 flex flex-col items-end gap-1">
+                            {!isJudicialRace && displayScore !== null && (
+                              <><span className="text-2xl font-black leading-none" style={{color: scoreColor}}>{displayScore}%</span><span className="text-[9px] font-black uppercase tracking-widest" style={{color:'rgba(255,255,255,0.3)'}}>match</span></>
+                            )}
+                          </div>
+                          <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.1)'}}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                          </div>
+                        </button>
+
+                        {/* ── DESKTOP layout: 3 columns, col 3 double-wide ── */}
+                        <div className="hidden lg:grid" style={{gridTemplateColumns:'1fr 1.6fr 2fr', minHeight:'160px'}}>
+
+                          {/* Col 1: Race name + selected indicator */}
+                          <div className="flex flex-col items-center justify-center gap-2 px-6 py-6 border-r border-white/10 text-center">
+                            {isOnBallot && <span style={{color:'#22c55e', fontSize:'16px'}}>✓</span>}
+                            <p className="font-black uppercase leading-tight" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'22px', letterSpacing:'0.04em', color:'#fff'}}>
+                              {formatOfficeLines(race.office).map((line, i) => <span key={i} className="block">{line}</span>)}
+                            </p>
+                          </div>
+
+                          {/* Col 2: Race description + matched candidate name */}
+                          <div className="flex flex-col justify-center px-6 py-6 border-r border-white/10">
+                            {race.description && <p className="text-[13px] leading-relaxed mb-3" style={{color:'rgba(255,255,255,0.7)'}}>{race.description}</p>}
+                            {displayCand && (
+                              <p className="text-[12px] font-black uppercase tracking-widest" style={{color:'#22c55e'}}>✓ {displayCand.name}</p>
+                            )}
+                          </div>
+
+                          {/* Col 3 (double-wide): Photo + name + match + hook + actions */}
+                          <div className="flex items-center gap-6 px-8 py-6" style={{background:'rgba(255,255,255,0.03)'}}>
+                            {/* Photo + match % */}
+                            <button onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
+                              className="flex flex-col items-center gap-2 shrink-0 hover:opacity-80 transition-all">
+                              <div className="relative">
+                                <div className="w-24 h-24 rounded-full overflow-hidden" style={{border:`3px solid ${partyColor}`}}>
+                                  {displayCand?.photo
+                                    ? <img src={displayCand.photo} alt={displayCand.name} className="w-full h-full object-cover" style={{objectPosition:'center 5%'}} onError={e => e.target.style.display='none'} />
+                                    : <div className="w-full h-full flex items-center justify-center text-white font-black text-2xl" style={{background: partyColor + '33'}}>{getInitials(displayCand?.name || '')}</div>
+                                  }
+                                </div>
+                                {!isJudicialRace && displayScore !== null && (
+                                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[11px] font-black whitespace-nowrap" style={{background:'#0f172a', border:`2px solid ${scoreColor}`, color: scoreColor}}>
+                                    {displayScore}%
+                                  </div>
+                                )}
+                              </div>
+                              <span className="mt-2 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
+                                style={{background: partyColor + '28', color: partyColor, border:`1px solid ${partyColor}55`}}>
+                                {displayCand?.party === 'D' ? 'Democrat' : displayCand?.party === 'R' ? 'Republican' : 'Independent'}
+                              </span>
+                            </button>
+
+                            {/* Hook + actions */}
+                            <div className="flex flex-col gap-3 flex-1">
+                              <p className="text-[13px] font-black uppercase tracking-widest" style={{color:'rgba(255,255,255,0.75)'}}>{displayCand?.name}</p>
+                              {displayCand?.hook && (
+                                <p className="font-black leading-snug" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'15px', color:'rgba(255,255,255,0.9)', letterSpacing:'0.02em'}}>
+                                  {displayCand.hook}
+                                </p>
+                              )}
+                              <div className="flex gap-2 flex-wrap mt-1">
+                                <button onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
+                                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-all hover:brightness-125"
+                                  style={{background:'rgba(217,119,6,0.2)', color:'#f59e0b', border:'1px solid rgba(217,119,6,0.5)', letterSpacing:'0.1em'}}>
+                                  ★ Get the Facts
+                                </button>
+                                <button onClick={() => {
+                                    const office = race.office;
+                                    const name = displayCand?.name;
+                                    setSelected(prev => prev[office] === name ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== office)) : {...prev, [office]: name});
+                                  }}
+                                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-all hover:brightness-125"
+                                  style={isOnBallot
+                                    ? {background:'rgba(34,197,94,0.2)', color:'#22c55e', border:'1px solid rgba(34,197,94,0.5)'}
+                                    : {background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', border:'1px solid rgba(255,255,255,0.2)'}}>
+                                  {isOnBallot ? '✓ On Ballot' : '+ Add to Ballot'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
                         </div>
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-widest mb-0.5 leading-tight" style={{color:'rgba(255,255,255,0.35)'}}>
-                            {formatOfficeLines(race.office).map((line, i) => (
-                              <span key={i} className="block whitespace-nowrap">{line}</span>
-                            ))}
-                          </p>
-                          <p className="text-white font-black text-base leading-tight">{displayCand?.name}</p>
-                          <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
-                            style={{background: partyColor + '28', color: partyColor, border: `1px solid ${partyColor}55`}}>
-                            {displayCand?.party === 'D' ? 'Democrat' : displayCand?.party === 'R' ? 'Republican' : 'Independent'}
-                          </span>
-                        </div>
-                        {/* Match % */}
-                        <div className="shrink-0 flex flex-col items-end gap-1">
-                          {isJudicialRace ? (
-                            <span className="text-[10px] font-black uppercase tracking-wide text-center leading-tight" style={{color:'rgba(255,255,255,0.4)'}}>Party<br/>Aligned</span>
-                          ) : displayScore !== null ? (
-                            <>
-                              <span className="text-2xl font-black leading-none" style={{color: displayScore >= 70 ? '#22c55e' : displayScore >= 40 ? '#f59e0b' : '#ef4444'}}>{displayScore}%</span>
-                              <span className="text-[9px] font-black uppercase tracking-widest" style={{color:'rgba(255,255,255,0.3)'}}>match</span>
-                            </>
-                          ) : (
-                            <span className="text-xs font-black" style={{color:'rgba(255,255,255,0.2)'}}>—</span>
-                          )}
-                        </div>
-                        {/* View profile CTA */}
-                        <div className="shrink-0 flex flex-col items-center justify-center w-8 h-8 rounded-full" style={{background:'rgba(255,255,255,0.1)'}}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M9 18l6-6-6-6"/>
-                          </svg>
-                        </div>
-                      </button>
+                      </div>
                     );
-                  }} />
-              );
-            })}
+                  };
+                return onOpen(race);
+              });
+            })()}
 
 
           </div>
@@ -2794,7 +2979,7 @@
                   const score = calcMatch(candidate, answers, checkedStatements, ranks);
                   const isSelected = currentSelected === candidate.name;
                   const isRecommended = recommended === candidate.name;
-                  const matched = matchedIssues(candidate, answers, issues);
+                  const matched = matchedIssues(candidate, answers, checkedStatements, issues);
                   return (
                     <button
                       key={candidate.name}
@@ -2958,19 +3143,19 @@
       }
       return (
         <React.Fragment>
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/60 lg:items-center lg:justify-center lg:p-8">
-          <div className="flex flex-col bg-white lg:rounded-2xl lg:shadow-2xl lg:max-w-4xl w-full lg:max-h-[90vh] overflow-hidden">
-          {/* Header */}
-          <div className={`${accentBg} px-5 pt-4 pb-4 relative flex-shrink-0`}>
-            <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/60 lg:items-center lg:justify-center lg:p-6">
+          <div className="flex flex-col lg:flex-row bg-white lg:rounded-2xl lg:shadow-2xl lg:max-w-6xl w-full lg:max-h-[92vh] overflow-hidden relative">
+            <button onClick={onClose} className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/55 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-black/70">✕</button>
+          {/* LEFT PANEL — identity (mobile: top, desktop: fixed-width left column) */}
+          <div className={`${accentBg} lg:w-[380px] lg:flex-shrink-0 lg:overflow-y-auto relative flex-shrink-0 px-5 pt-8 pb-5 lg:pt-10`}>
 
-            {/* Top row: photo + identity + match score */}
-            <div className="flex items-center gap-3">
-              {/* Photo */}
-              <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+            {/* Top row: photo + identity */}
+            <div className="flex items-center gap-4">
+              {/* Photo — larger on desktop */}
+              <div className="flex-shrink-0">
                 {onSelect ? (
                   <button onClick={onSelect} className="relative active:scale-95 hover:scale-105 transition-transform" title={isSelected ? 'Remove from ballot' : 'Add to ballot'}>
-                    <div className={`w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 overflow-hidden bg-white/20 transition-colors ${isSelected ? (candidate.party === 'D' ? 'border-blue-200' : candidate.party === 'R' ? 'border-red-200' : 'border-slate-200') : 'border-white/50'}`}>
+                    <div className={`w-16 h-16 lg:w-24 lg:h-24 rounded-full border-4 overflow-hidden bg-white/20 transition-colors ${isSelected ? (candidate.party === 'D' ? 'border-blue-200' : candidate.party === 'R' ? 'border-red-200' : 'border-slate-200') : 'border-white/50'}`}>
                       <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
                     </div>
                     <span className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center text-sm font-black border-2 border-white shadow-md transition-colors ${isSelected ? (candidate.party === 'D' ? 'bg-blue-200 text-blue-900' : candidate.party === 'R' ? 'bg-red-200 text-red-900' : 'bg-slate-200 text-slate-900') : 'bg-white text-slate-900'}`}>
@@ -2978,56 +3163,53 @@
                     </span>
                   </button>
                 ) : (
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white/50 overflow-hidden bg-white/20">
+                  <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full border-4 border-white/50 overflow-hidden bg-white/20">
                     <img src={candidate.photo || './icons/candidate-undefined.png'} alt={candidate.name} className="w-full h-full object-cover object-top" onError={e => { e.target.src='./icons/candidate-undefined.png'; e.target.className='w-full h-full object-contain object-bottom'; e.target.style.opacity='0.6'; }} />
                   </div>
                 )}
-                {onSelect && (
-                  <p className={`text-[8px] font-bold uppercase tracking-widest text-center mt-0.5 ${isSelected ? (candidate.party === 'D' ? 'text-blue-200' : candidate.party === 'R' ? 'text-red-200' : 'text-slate-200') : 'text-white/70'}`}>
-                    {isSelected ? '✓ On Ballot' : 'Tap to Add'}
-                  </p>
-                )}
               </div>
 
-              {/* Name + party + website + match score */}
+              {/* Name + party + match score */}
               <div className="flex-1 min-w-0">
                 {raceName && (
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest leading-tight mb-1">
+                  <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest leading-tight mb-1">
                     {formatOfficeLines(raceName).map((line, i) => (
                       <span key={i} className="block">{line}</span>
                     ))}
                   </p>
                 )}
-                <h2 className="text-white font-black text-xl leading-tight mb-1">{candidate.name}</h2>
+                <h2 className="text-white font-black text-xl lg:text-2xl leading-tight mb-1">{candidate.name}</h2>
+                <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mb-1.5">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{candidate.party === 'D' ? 'Democrat' : candidate.party === 'R' ? 'Republican' : 'Independent'}</p>
                   {isJudicialCandidate ? (
                     <span className="text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white/60">Party Aligned</span>
                   ) : matchScore !== null && (
-                    <span className="text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white">{matchScore}% match</span>
+                    <span className="text-[13px] font-black px-3 py-1 rounded-full bg-white/25 text-white">{matchScore}% match</span>
                   )}
+                  <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer" className="inline-block text-white/50 hover:text-white transition-colors" title="Visit website">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </a>
                 </div>
-                <a href={candidate.website || undefined} target="_blank" rel="noopener noreferrer" className="inline-block mt-0.5 text-white/60 hover:text-white transition-colors" title="Visit website">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                </a>
               </div>
             </div>
+
+            {/* Compare / Uncontested */}
             {onCompare ? (
               <button onClick={onCompare}
-                className="mt-3 w-full py-2 rounded-full text-[12px] font-black uppercase tracking-widest text-white/90 hover:text-white transition-colors"
-                style={{background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', letterSpacing:'0.08em'}}>
+                className="mt-4 w-full py-2.5 rounded-full text-[12px] font-black uppercase tracking-widest text-white/90 hover:text-white transition-colors"
+                style={{background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)', letterSpacing:'0.08em'}}>
                 {isOpponent ? '← Back to Your Match' : 'Compare to Opponent →'}
               </button>
             ) : (
-              <div className="mt-3 w-full py-2 rounded-full text-center text-[12px] font-black uppercase tracking-widest text-white/35"
+              <div className="mt-4 w-full py-2.5 rounded-full text-center text-[12px] font-black uppercase tracking-widest text-white/35"
                 style={{background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', letterSpacing:'0.08em'}}>
                 No Opponent — Uncontested
               </div>
             )}
 
-            {/* Hook + summary below */}
+            {/* Hook + bio */}
             {(candidate.hook || candidate.summary) && (
-              <div className="mt-3 border-t border-white/15 pt-3">
+              <div className="mt-4 border-t border-white/15 pt-4 px-2">
                 {hookCollapsed ? (
                   <button onClick={() => setHookCollapsed(false)}
                     className="text-white/70 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest">
@@ -3036,36 +3218,49 @@
                 ) : (
                   <>
                     {candidate.hook && (
-                      <p className="text-white font-black leading-tight text-[18px] lg:text-[22px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.01em'}}>
+                      <p className="text-white font-black leading-tight text-[19px] lg:text-[21px]" style={{fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.01em'}}>
                         {candidate.hook}
                       </p>
                     )}
                     {candidate.summary && (
-                      <p className="text-white/85 mt-1.5 leading-snug text-[14px] font-medium">{candidate.summary}</p>
+                      <p className="text-white/80 mt-2 leading-relaxed text-[14px]">{candidate.summary}</p>
                     )}
-                    <div className="flex justify-end mt-1.5">
-                      <button onClick={() => setHookCollapsed(true)}
-                        className="text-white/70 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest">
-                        Hide bio ▲
-                      </button>
-                    </div>
+                    <button onClick={() => setHookCollapsed(true)}
+                      className="mt-2 text-white/50 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest">
+                      Hide bio ▲
+                    </button>
                   </>
                 )}
               </div>
             )}
+
+            {/* Add to Ballot — desktop only (mobile has it in bottom bar) */}
+            {onSelect && (
+              <div className="hidden lg:block mt-5">
+                <button onClick={onSelect}
+                  className={`w-full py-3 rounded-full font-black text-sm uppercase tracking-wide transition-all active:scale-95 ${isSelected ? 'bg-white text-slate-900' : 'bg-white/20 text-white border-2 border-white/40 hover:bg-white/30'}`}>
+                  {isSelected ? '✓ On Your Ballot' : '+ Add to Ballot'}
+                </button>
+              </div>
+            )}
           </div>
-          {/* Issue positions — 2 columns on desktop */}
-          <div className="flex-1 overflow-y-auto">
+          {/* RIGHT PANEL — issues (scrollable on desktop) */}
+          <div className="flex-1 overflow-y-auto bg-white min-w-0">
             {(() => {
               const lastName = candidate.name.split(' ').slice(-1)[0];
               const allEvidenceVals = issues ? issues.map(i => candidate.evidence?.[i.id]).filter(Boolean) : [];
               const sharedEvidence = allEvidenceVals.length > 1 && allEvidenceVals.every(e => e === allEvidenceVals[0]) ? allEvidenceVals[0] : null;
               return (
                 <>
+                  {/* Desktop section header */}
+                  <div className="hidden lg:flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Issue Positions</h3>
+                    {hasAnswers && <span className="text-xs text-slate-400 pr-10">✓ = matches your views</span>}
+                  </div>
                   {sharedEvidence && (
-                    <p className="text-sm text-slate-500 leading-relaxed px-5 pt-4 pb-2 border-b border-slate-100 italic">{sharedEvidence}</p>
+                    <p className="text-sm text-slate-500 leading-relaxed px-5 lg:px-6 pt-4 pb-2 border-b border-slate-100 italic">{sharedEvidence}</p>
                   )}
-            <div className="divide-y divide-slate-100 lg:divide-y-0 lg:columns-2">
+            <div className="divide-y divide-slate-100">
               {issues && issues.map((issue, idx) => {
                 const pos = candidate.positions?.[issue.id];
                 const hasStance = pos === 'A' || pos === 'B' || pos === 'C';
@@ -3086,7 +3281,7 @@
                 const expandable = stance && posText;
                 const isOpen = !!openIssues[issue.id];
                 return (
-                  <div key={issue.id} className={`px-5 py-3 lg:py-4 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : isSplit ? 'bg-slate-50' : ''}`}>
+                  <div key={issue.id} className={`px-5 lg:px-6 py-3 lg:py-4 border-b border-slate-100 ${isMatch ? 'bg-emerald-50' : isMismatch ? 'bg-rose-50' : isSplit ? 'bg-slate-50' : ''}`}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${POS_DOT[pos] || 'bg-slate-300'}`} />
                       <span className="text-[11px] lg:text-xs font-black text-slate-500 uppercase tracking-wider">{issue.topic}</span>
@@ -3135,8 +3330,8 @@
               </button>
             </div>
 
-            {/* Bottom CTA */}
-            <div className={`px-5 py-4 ${accentBg} flex items-center justify-between gap-4`}>
+            {/* Bottom CTA — mobile only (desktop has Add button in left panel) */}
+            <div className={`lg:hidden px-5 py-4 ${accentBg} flex items-center justify-between gap-4`}>
               {onClose && (
                 <button onClick={onClose}
                   className="flex items-center gap-2 text-white/80 hover:text-white font-black text-sm uppercase tracking-widest transition-colors">
@@ -3146,9 +3341,9 @@
               {onSelect && (
                 <button
                   onClick={onSelect}
-                  className={`ml-auto flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wide transition-all active:scale-95 ${isSelected ? 'bg-white text-slate-900' : 'bg-white/20 text-white border-2 border-white/50 hover:bg-white/30'}`}
+                  className={`ml-auto whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-sm uppercase tracking-wide transition-all active:scale-95 ${isSelected ? 'bg-white text-slate-900' : 'bg-white/20 text-white border-2 border-white/50 hover:bg-white/30'}`}
                 >
-                  {isSelected ? '✓ On Ballot' : '+ Add'}
+                  {isSelected ? '✓ On Ballot' : '+ Add to Ballot'}
                 </button>
               )}
             </div>
@@ -3480,7 +3675,7 @@
                   {/* Desktop issue rows */}
                   <div className={`divide-y divide-slate-100 ${inline ? 'overflow-y-auto no-scrollbar' : 'flex-1'}`} style={inline ? {maxHeight:'calc(100vh - 400px)'} : {}}>
                     {sortedIssues.map((issue, idx) => {
-                      const voterPos = answers?.[issue.id];
+                      const voterPos = deriveVoterPos(issue.id, answers, checkedStatements);
                       const voterAnswered = voterPos && voterPos !== 'D';
                       const issueRank = ranks?.[issue.id] || 0;
                       return (
@@ -3826,66 +4021,97 @@
       return (
         <div className="bg-slate-100 min-h-screen">
           {/* Header */}
-          <header className="bg-white border-b border-slate-200 px-4 py-3.5 sticky top-0 z-10">
-            <div className="max-w-5xl mx-auto flex items-center justify-center relative">
-              <button onClick={onHome} className="absolute left-0 text-sm text-slate-500 font-medium flex items-center gap-1">← Home</button>
-              <div className="text-xs font-black uppercase tracking-widest text-slate-400" style={{letterSpacing:'0.15em'}}>{counties[county].name} <span style={{color:'#d97706'}}>Beta V1</span></div>
+          <header className="sticky top-0 z-10 bg-white border-b border-slate-200 lg:border-0 lg:bg-[#0f172a]">
+            {/* Mobile: stacked layout */}
+            <div className="lg:hidden px-4 py-3.5">
+              <div className="flex items-center justify-center relative">
+                <button onClick={onHome} className="absolute left-0 text-sm text-slate-500 font-medium flex items-center gap-1">← Home</button>
+                <div className="text-xs font-black uppercase tracking-widest text-slate-400" style={{letterSpacing:'0.15em'}}>{counties[county].name} <span style={{color:'#d97706'}}>Beta V1</span></div>
+              </div>
+              <div className="mt-3 flex gap-1 p-1 rounded-xl" style={{background:'#0f172a'}}>
+                {TABS.map(tab => {
+                  const isActive = tab.key === activeTab;
+                  const tabRaces = filterRacesByDistrict(countyData[tab.key] || [], userDistricts);
+                  const tabSelected = tabRaces.filter(r => selected[r.office]).length;
+                  return (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                      className="flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-tight transition-all duration-150"
+                      style={isActive
+                        ? {background:'#fff', color:'#0f172a', boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}
+                        : {background:'transparent', color:'#94a3b8'}}>
+                      {tab.label}
+                      {tabSelected > 0 && <span className="ml-1.5 text-emerald-400">·{tabSelected}</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Tab bar — segmented control */}
-            <div className="max-w-5xl mx-auto mt-3 flex gap-1 p-1 rounded-xl" style={{background:'#0f172a'}}>
-              {TABS.map(tab => {
-                const isActive = tab.key === activeTab;
-                const tabRaces = filterRacesByDistrict(countyData[tab.key] || [], userDistricts);
-                const tabSelected = tabRaces.filter(r => selected[r.office]).length;
-                return (
-                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                    className="flex-1 py-2 rounded-lg text-xs lg:text-sm font-black uppercase tracking-tight lg:tracking-widest transition-all duration-150"
-                    style={isActive
-                      ? {background:'#fff', color:'#0f172a', boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}
-                      : {background:'transparent', color:'#94a3b8'}}>
-                    {tab.label}
-                    {tabSelected > 0 && <span className="ml-1.5 text-emerald-400">·{tabSelected}</span>}
-                  </button>
-                );
-              })}
+            {/* Desktop: single dark row */}
+            <div className="hidden lg:flex items-center h-16 px-8 relative">
+              <button onClick={onHome} className="absolute left-8 text-sm text-slate-400 hover:text-white font-semibold flex items-center gap-1.5 transition-colors">← Home</button>
+              <div className="flex gap-2 mx-auto">
+                {TABS.map(tab => {
+                  const isActive = tab.key === activeTab;
+                  const tabRaces = filterRacesByDistrict(countyData[tab.key] || [], userDistricts);
+                  const tabSelected = tabRaces.filter(r => selected[r.office]).length;
+                  return (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                      className="px-6 py-2 rounded-full text-sm font-black uppercase tracking-widest transition-all duration-150"
+                      style={isActive
+                        ? {background:'#fff', color:'#0f172a', boxShadow:'0 2px 12px rgba(0,0,0,0.3)'}
+                        : {background:'transparent', color:'#64748b'}}>
+                      {tab.label}
+                      {tabSelected > 0 && <span className="ml-1.5 text-emerald-400">·{tabSelected}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="absolute right-8 text-xs font-black uppercase tracking-widest text-slate-500" style={{letterSpacing:'0.15em'}}>{counties[county].name} <span style={{color:'#d97706'}}>Beta V1</span></div>
             </div>
           </header>
 
-          {/* Location banner — always visible, dynamic based on address */}
-          <div className="max-w-5xl mx-auto px-4 pt-3">
-            {userDistricts ? (
-              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl"
-                style={{background:'linear-gradient(90deg,#14532d,#16a34a)', color:'#fff'}}>
-                <div className="flex items-center gap-2">
-                  <span style={{fontSize:'18px'}}>📍</span>
+          {/* Location banner + Build My Ballot — 50/50 row */}
+          <div className="max-w-5xl mx-auto px-4 pt-3 flex items-stretch gap-3">
+            {/* Left half — address filter */}
+            <div className="flex-1">
+              {userDistricts ? (
+                <div className="h-full flex items-center gap-2 px-4 py-3 rounded-2xl"
+                  style={{background:'linear-gradient(90deg,#14532d,#16a34a)', color:'#fff'}}>
+                  <span style={{fontSize:'16px'}}>📍</span>
                   <div>
-                    <div className="text-[11px] font-bold uppercase tracking-widest opacity-75">Showing your candidates</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-75">Showing your candidates</div>
                     <div className="text-sm font-black uppercase tracking-wide">{counties[county].name}</div>
                   </div>
+                  <button onClick={() => setUserDistricts(null)}
+                    className="ml-auto text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full transition-all active:scale-95"
+                    style={{background:'rgba(255,255,255,0.2)', color:'#fff'}}>
+                    ✕ Clear
+                  </button>
                 </div>
-                <button onClick={() => setUserDistricts(null)}
-                  className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full transition-all active:scale-95"
-                  style={{background:'rgba(255,255,255,0.2)', color:'#fff'}}>
-                  ✕ Clear
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setShowFilterModal(true)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[0.98]"
-                style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb)', color:'#fff'}}>
-                <div className="flex items-center gap-2">
-                  <span style={{fontSize:'18px'}}>📍</span>
+              ) : (
+                <button onClick={() => setShowFilterModal(true)}
+                  className="w-full h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[0.98]"
+                  style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb)', color:'#fff'}}>
+                  <span style={{fontSize:'16px'}}>📍</span>
                   <div className="text-left">
-                    <div className="text-[11px] font-bold uppercase tracking-widest opacity-75">Filter by your address</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-75">Filter by your address</div>
                     <div className="text-sm font-black uppercase tracking-wide">Show My Candidates Only</div>
                   </div>
-                </div>
-                <svg className="w-5 h-5 opacity-80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
-              </button>
-            )}
+                  <svg className="w-4 h-4 opacity-80 shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+            {/* Right half — Build My Ballot */}
+            <button onClick={onBallot}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
+              style={selectedCount > 0
+                ? {background:'linear-gradient(90deg,#064e3b,#059669)', color:'#fff'}
+                : {background:'#1e293b', color:'#64748b', border:'1.5px solid #334155'}}>
+              {selectedCount > 0 ? `✓ Build My Ballot · ${selectedCount} race${selectedCount !== 1 ? 's' : ''}` : 'Build My Ballot →'}
+            </button>
           </div>
 
           {/* Race list */}
@@ -3929,20 +4155,7 @@
 
                     {/* Candidate columns — 50/50 on mobile, 25/25 on desktop */}
                     <div className="w-full lg:w-1/2 flex relative">
-                      {/* Compare button — hidden for uncontested races */}
-                      {!race.candidates.filter(Boolean).some(c => c.uncontested) && race.candidates.filter(Boolean).length > 1 && (
-                      <button
-                        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest border hover:scale-105 active:scale-95 transition-all duration-150 ${isExpanded ? 'bg-white text-slate-900 border-white hover:bg-white/90' : 'text-white border-white/30 hover:border-white/70 hover:bg-white/20'}`}
-                        style={{background: isExpanded ? undefined : 'rgba(15,23,42,0.95)', letterSpacing:'0.1em'}}
-                        onClick={() => {
-                          toggleRace(race.office);
-                          if (!isExpanded) setTimeout(() => {
-                            document.getElementById('race-'+race.office.replace(/\s+/g,'-'))?.scrollIntoView({behavior:'smooth', block:'start'});
-                          }, 50);
-                        }}>
-                        {isExpanded ? '✕ Close' : 'Compare'}
-                      </button>
-                      )}
+                      {/* Compare button removed */}
                       {race.candidates.filter(Boolean).slice(0,2).map(c => {
                         const accent = c.party==='D'?'#3b82f6':c.party==='R'?'#ef4444':'#94a3b8';
                         const partyLabel = c.party==='D'?'Democrat':c.party==='R'?'Republican':'Independent';
@@ -3955,8 +4168,8 @@
                             onClick={() => setBrowseProfile({candidate: c, race})}
                             className="flex-1 flex flex-col items-center justify-center py-4 lg:py-5 gap-2 border-r border-white/10 cursor-pointer active:bg-white/10 transition-colors"
                             style={{background:'rgba(255,255,255,0.05)', margin:'8px', borderRadius:'14px', border:`1.5px solid #d97706`}}>
-                            <p className="text-[11px] font-black text-slate-200 uppercase tracking-widest text-center leading-tight">{c.name}</p>
-                            <div className="relative" style={{width: ringSize, height: ringSize}}>
+                            <p className="text-[12px] font-black text-slate-200 uppercase tracking-widest text-center leading-tight">{c.name}</p>
+                            <div className="relative" style={{width: Math.round(ringSize*1.04), height: Math.round(ringSize*1.04)}}>
                               <div className="absolute inset-0 rounded-full" style={{background: accent}} />
                               <div className="absolute rounded-full overflow-hidden bg-slate-700" style={{inset: border}}>
                                 <img src={c.photo||'./icons/candidate-undefined.png'} alt={c.name} className="w-full h-full object-cover object-top"
@@ -3971,7 +4184,25 @@
                             </div>
                             <span className={`text-[10px] font-bold uppercase tracking-wide ${partyColor}`}>{partyLabel}</span>
                             {c.uncontested && <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 border border-slate-600 rounded px-1.5 py-0.5">Uncontested</span>}
-                            <span className="text-[9px] text-white/50 uppercase tracking-wider flex items-center gap-1">Tap to learn more <span style={{fontSize:'11px'}}>→</span></span>
+                            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full" style={{background:'rgba(217,119,6,0.2)', color:'#f59e0b', border:'1px solid rgba(217,119,6,0.5)'}}>★ Get the Facts</span>
+                            {(() => {
+                              const isCandSelected = selected[race.office] === c.name;
+                              return (
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setSelected(prev => isCandSelected
+                                      ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== race.office))
+                                      : {...prev, [race.office]: c.name});
+                                  }}
+                                  className="mt-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
+                                  style={isCandSelected
+                                    ? {background:'#10b981', color:'#fff'}
+                                    : {background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.2)'}}>
+                                  {isCandSelected ? '✓ On Ballot' : '+ Add to Ballot'}
+                                </button>
+                              );
+                            })()}
                           </button>
                         );
                       })}
@@ -4186,7 +4417,7 @@
           </header>
 
           {/* Hero header — shows on screen AND prints */}
-          <div style={{background:'#fff', padding:'4px 40px 8px'}}>
+          <div style={{background:'#fff', padding:'4px 40px 4px'}}>
             <div style={{maxWidth:'900px', margin:'0 auto', textAlign:'center'}}>
               <img src="./icons/VoteYourViews_Logo_Black.png" alt="VoteYourViews" style={{height:'58px', display:'block', margin:'0 auto'}} />
               <div className="ballot-title font-black uppercase" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'40px', color:'#0f172a', letterSpacing:'0.04em', lineHeight:1, marginTop:'2px'}}>
@@ -4199,13 +4430,6 @@
           </div>
 
           <main className="px-4 py-2 fade-in" style={{maxWidth:'960px', margin:'0 auto'}}>
-            {/* Your Matching Candidates label */}
-            <div style={{textAlign:'center', marginBottom:'12px', marginTop:'6px', padding:'6px 0'}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'11px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.25em', color:'#94a3b8', marginBottom:'2px'}}>Your</div>
-              <div className="ballot-matching" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'32px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.12em', lineHeight:1, color:'#0f172a'}}>
-                <span style={{color:'#2563eb'}}>Matching</span> Candidates
-              </div>
-            </div>
 
             {RACE_SECTIONS.map(sec => {
               const sectionRaces = filterRacesByDistrict(countyData[sec.key] || [], userDistricts);
@@ -4215,7 +4439,7 @@
               }).filter(Boolean);
               if (!sectionCandidates.length) return null;
               return (
-                <div key={sec.key} className="mb-4" style={sec.key === 'judicial' ? {pageBreakBefore:'always', breakBefore:'page'} : {}}>
+                <div key={sec.key} className="mb-4" style={{}}>
                   <div className="flex items-center gap-3 mb-1 pb-1" style={{borderBottom:'2px solid #0f172a'}}>
                     <div className="font-black uppercase tracking-widest" style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'15px', color:'#0f172a', letterSpacing:'0.1em'}}>{sec.label}</div>
                   </div>
@@ -4263,9 +4487,9 @@
 
             {/* Polling locations — after candidates */}
             <div style={{marginTop:'24px', borderTop:'2px solid #0f172a', paddingTop:'16px'}}>
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:'16px'}}>
+              <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
                 {/* Left: header + locations */}
-                <div style={{flex:1}}>
+                <div style={{flex:1, minWidth:0}}>
                   <div style={{marginBottom:'10px'}}>
                     <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'10px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.25em', color:'#94a3b8', marginBottom:'2px'}}>Your Closest</div>
                     <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'22px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.08em', lineHeight:1, color:'#0f172a'}}>
@@ -4288,8 +4512,8 @@
                   </div>
                 </div>
                 {/* Right: QR code */}
-                <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px', background:'#f8fafc', borderRadius:'10px', padding:'10px 12px', minWidth:'90px'}}>
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://www.harrisvotes.com/Voter/Find-Polling-Place" alt="Find polling place QR" style={{width:'72px', height:'72px', display:'block'}} />
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px', background:'#f8fafc', borderRadius:'10px', padding:'10px 12px', width:'100px', flexShrink:0}}>
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://hayscountytx.com/departments/elections/voter-information/" alt="Find polling place QR" style={{width:'72px', height:'72px', display:'block'}} />
                   <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontSize:'8px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.1em', color:'#64748b', textAlign:'center', lineHeight:1.2}}>More<br/>Locations</div>
                 </div>
               </div>
