@@ -14,7 +14,7 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
   <script src="https://unpkg.com/papaparse@5/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
@@ -108,6 +108,12 @@
       [class*="bg-gradient"] { background: #1e293b !important; color: white !important; padding: 6px 10px !important; }
       [class*="bg-slate-9"] { background: white !important; color: black !important; }
       [class*="bg-slate-950"] { background: white !important; }
+
+      /* Force letter-size layout regardless of screen/device width */
+      html, body { width: 7.5in !important; min-width: 7.5in !important; font-size: 12px; }
+      #root { width: 7.5in !important; }
+      .ballot-grid { grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
+      main { max-width: 100% !important; padding: 8px 12px !important; width: 100% !important; }
 
       /* Candidate cards */
       .grid { gap: 0 !important; }
