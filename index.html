@@ -2577,43 +2577,46 @@
             </div>
           </header>
 
-          {/* 3-item action row: Address | Compare Opponents | Save Ballot */}
-          <div className="max-w-5xl mx-auto w-full px-4 pt-3 flex items-stretch gap-3">
+          {/* 3-item action row: Address | Compare Opponents | My Ballot — frosted glass set */}
+          <div className="max-w-5xl mx-auto w-full px-4 pt-3 flex flex-col sm:flex-row items-stretch gap-3">
             {/* Address filter */}
             <div className="flex-1">
               {userDistricts ? (
-                <div className="h-full flex items-center gap-2 px-4 py-3 rounded-2xl" style={{background:'linear-gradient(90deg,#14532d,#16a34a)', color:'#fff'}}>
-                  <span style={{fontSize:'16px'}}>📍</span>
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-75">Showing your candidates</div>
-                    <div className="text-sm font-black uppercase tracking-wide">{counties[county].name}</div>
+                <div className="h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200"
+                  style={{background:'linear-gradient(135deg, rgba(22,163,74,0.30), rgba(20,83,45,0.18))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(134,239,172,0.35)', boxShadow:'0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)', color:'#fff'}}>
+                  <svg className="w-5 h-5 shrink-0" style={{color:'#4ade80'}} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{color:'rgba(255,255,255,0.7)'}}>Showing your candidates</div>
+                    <div className="text-sm font-black uppercase tracking-wide truncate">{counties[county].name}</div>
                   </div>
-                  <button onClick={() => setUserDistricts(null)} className="ml-auto text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full" style={{background:'rgba(255,255,255,0.2)', color:'#fff'}}>✕ Clear</button>
+                  <button onClick={() => setUserDistricts(null)} className="ml-auto text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0" style={{background:'rgba(255,255,255,0.18)', color:'#fff'}}>✕ Clear</button>
                 </div>
               ) : (
                 <button onClick={() => setShowFilterModal(true)}
-                  className="w-full h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[0.98]"
-                  style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb)', color:'#fff'}}>
-                  <span style={{fontSize:'16px'}}>📍</span>
-                  <div className="text-left">
-                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-75">Filter by your address</div>
+                  className="w-full h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                  style={{background:'linear-gradient(135deg, rgba(37,99,235,0.28), rgba(30,58,138,0.16))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(147,197,253,0.32)', boxShadow:'0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)', color:'#fff'}}>
+                  <svg className="w-5 h-5 shrink-0" style={{color:'#60a5fa'}} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+                  <div className="text-left min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{color:'rgba(255,255,255,0.7)'}}>Filter by your address</div>
                     <div className="text-sm font-black uppercase tracking-wide">Show My Candidates Only</div>
                   </div>
-                  <svg className="w-4 h-4 opacity-80 shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                  <svg className="w-4 h-4 shrink-0 ml-auto" style={{color:'rgba(255,255,255,0.7)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
                 </button>
               )}
             </div>
-            {/* Compare Opponents */}
+            {/* Compare Opponents — frosted red glass */}
             <button onClick={onBrowse}
-              className="flex items-center justify-center px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:brightness-110 active:scale-95"
-              style={{background:'#1e293b', color:'#94a3b8', border:'1.5px solid #334155', letterSpacing:'0.08em', minWidth:'160px'}}>
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+              style={{background:'linear-gradient(135deg, rgba(239,68,68,0.38), rgba(185,28,28,0.24))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(252,165,165,0.42)', boxShadow:'0 10px 28px rgba(220,38,38,0.24), inset 0 1px 0 rgba(255,255,255,0.26)', color:'#fff', letterSpacing:'0.08em', minWidth:'170px'}}>
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg>
               Compare Opponents
             </button>
-            {/* Save Ballot */}
+            {/* My Ballot — frosted glass, subtle blue lead */}
             <button onClick={onBallot}
-              className="flex items-center justify-center px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:brightness-110 active:scale-95"
-              style={{background:'#1e293b', color:'#94a3b8', border:'1.5px solid #334155', letterSpacing:'0.08em', minWidth:'140px'}}>
-              Save Ballot
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+              style={{background:'linear-gradient(135deg, rgba(59,130,246,0.42), rgba(37,99,235,0.26))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(147,197,253,0.45)', boxShadow:'0 10px 28px rgba(37,99,235,0.28), inset 0 1px 0 rgba(255,255,255,0.28)', color:'#fff', letterSpacing:'0.08em', minWidth:'150px'}}>
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              My Ballot
             </button>
           </div>
 
@@ -2653,33 +2656,42 @@
                       <div key={race.office} className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}>
 
                         {/* ── MOBILE layout ── */}
-                        <button onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
-                          className="lg:hidden w-full text-left p-3 flex items-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]">
-                          <div className="shrink-0 w-14 h-14 rounded-full overflow-hidden" style={{border:`2px solid ${partyColor}`}}>
-                            {displayCand?.photo
-                              ? <img src={displayCand.photo} alt={displayCand.name} className="w-full h-full object-cover" style={{objectPosition:'center 5%'}} onError={e => e.target.style.display='none'} />
-                              : <div className="w-full h-full flex items-center justify-center text-white font-black text-lg" style={{background: partyColor + '33'}}>{getInitials(displayCand?.name || '')}</div>
-                            }
+                        <div className="lg:hidden p-3 flex items-center gap-3">
+                          {/* Photo (circle) + match badge */}
+                          <div className="relative shrink-0" style={{paddingBottom:'4px'}}>
+                            <div className="relative w-[72px] h-[72px] rounded-full overflow-hidden" style={{border:`2.5px solid ${partyColor}`, background: partyColor + '33'}}>
+                              <div className="absolute inset-0 flex items-center justify-center text-white font-black text-xl">{getInitials(displayCand?.name || '')}</div>
+                              {displayCand?.photo &&
+                                <img src={displayCand.photo} alt={displayCand.name} className="absolute inset-0 w-full h-full object-cover" style={{objectPosition:'center 5%'}} onError={e => e.target.style.display='none'} />
+                              }
+                            </div>
+                            {!isJudicialRace && displayScore !== null && (
+                              <div className="absolute left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[11px] font-black whitespace-nowrap"
+                                style={{bottom:'-2px', background:'#0f172a', border:`2px solid ${scoreColor}`, color: scoreColor}}>
+                                {displayScore}%
+                              </div>
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest mb-0.5 leading-tight" style={{color:'rgba(255,255,255,0.35)'}}>
+                          {/* Office + name + party */}
+                          <button onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
+                            className="flex-1 min-w-0 text-left transition-all active:scale-[0.99]">
+                            <p className="text-[10px] font-black uppercase tracking-widest mb-1 leading-tight" style={{color:'rgba(255,255,255,0.4)'}}>
                               {formatOfficeLines(race.office).map((line, i) => <span key={i} className="block">{line}</span>)}
                             </p>
-                            <p className="text-white font-black text-base leading-tight">{displayCand?.name}</p>
-                            <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
+                            <p className="text-white font-black text-lg leading-tight mb-1.5">{displayCand?.name}</p>
+                            <span className="inline-block text-[10px] font-black uppercase tracking-wide px-2.5 py-0.5 rounded-full"
                               style={{background: partyColor + '28', color: partyColor, border: `1px solid ${partyColor}55`}}>
                               {displayCand?.party === 'D' ? 'Democrat' : displayCand?.party === 'R' ? 'Republican' : 'Independent'}
                             </span>
-                          </div>
-                          <div className="shrink-0 flex flex-col items-end gap-1">
-                            {!isJudicialRace && displayScore !== null && (
-                              <><span className="text-2xl font-black leading-none" style={{color: scoreColor}}>{displayScore}%</span><span className="text-[9px] font-black uppercase tracking-widest" style={{color:'rgba(255,255,255,0.3)'}}>match</span></>
-                            )}
-                          </div>
-                          <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.1)'}}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                          </div>
-                        </button>
+                          </button>
+                          {/* Get the Facts — compact, to the right */}
+                          <button onClick={() => setProfileData({ candidate: displayCand, race, isBest: !isOverridden })}
+                            className="shrink-0 flex flex-col items-center justify-center gap-1 px-2 py-3 rounded-xl transition-all active:scale-[0.96]"
+                            style={{width:'76px', background:'rgba(217,119,6,0.16)', color:'#f59e0b', border:'1px solid rgba(217,119,6,0.5)'}}>
+                            <span style={{fontSize:'16px', lineHeight:1}}>★</span>
+                            <span className="text-[9px] font-black uppercase leading-tight text-center" style={{letterSpacing:'0.06em'}}>Get the<br/>Facts</span>
+                          </button>
+                        </div>
 
                         {/* ── DESKTOP layout: 3 columns, col 3 double-wide ── */}
                         <div className="hidden lg:grid" style={{gridTemplateColumns:'1fr 1.6fr 2fr', minHeight:'160px'}}>
@@ -4285,7 +4297,12 @@
           await Promise.all(allCands.map(async ({ candidate }) => {
             const src = candidate.photo || './icons/candidate-undefined.png';
             if (photoCache[src] !== undefined) return;
-            let img = await loadImg(src);
+            const isRemote = /^https?:/i.test(src);
+            // Cache-bust remote photos so the browser does a fresh CORS-clean fetch
+            // (plain <img> tags on the page cache them without CORS headers, which taints the canvas)
+            const corsUrl = isRemote ? src + (src.includes('?') ? '&' : '?') + 'vyvcors=1' : src;
+            let img = await loadImg(corsUrl);
+            if (!img && isRemote) img = await loadImg(src); // retry original URL
             if (!img) img = await loadImg('./icons/candidate-undefined.png');
             photoCache[src] = circleDataURL(img, PHOTO_PX);
           }));
