@@ -1345,9 +1345,12 @@
                   </h2>
                 </div>
               ) : (
-                <div>
-                  <h2 className="text-white font-black text-2xl">Find My Candidates</h2>
-                  <p className="text-slate-200 text-sm mt-1">Enter your address to see only the<br/>candidates on your ballot.</p>
+                <div className="flex flex-col items-center text-center pt-1">
+                  <img src="icons/VoteYourViews_Logo_White.png" alt="VoteYourViews.org" className="mb-4" style={{height:'70px', width:'auto'}} />
+                  <h2 className="text-white font-black text-3xl leading-tight">
+                    See who's on<br/><span style={{color: '#fcd34d'}}>your</span> ballot.
+                  </h2>
+                  <p className="text-slate-200 text-base mt-2 leading-snug">Enter your address — we'll show you<br/>only the candidates you can vote for.</p>
                 </div>
               )}
             </div>
@@ -1405,19 +1408,17 @@
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder="123 Main St, San Marcos, TX 78666"
-                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none border mb-3 transition-colors"
+                    placeholder="enter your address"
+                    className="w-full px-4 py-3.5 rounded-xl text-base text-white placeholder-slate-400 focus:outline-none border mb-2 transition-colors"
                     style={{background:'rgba(255,255,255,0.10)', borderColor:`${btnColor}88`}}
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
-                  {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
-                  <div className={BTN.wrap}>
-                    <button onClick={handleSearch} disabled={isSearching}
-                      className={`w-full ${BTN.primary} disabled:opacity-50 mb-2`}
-                      style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.12em'}}>
-                      {isSearching ? 'Looking up your address…' : 'Find My Candidates →'}
-                    </button>
-                  </div>
+                  {error && <p className="text-sm text-red-400 mb-2">{error}</p>}
+                  <button onClick={handleSearch} disabled={isSearching}
+                    className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all disabled:opacity-50 uppercase tracking-widest"
+                    style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.12em'}}>
+                    {isSearching ? 'Looking up your address…' : 'Find My Candidates →'}
+                  </button>
                   {onShowAll && (
                     <button onClick={onShowAll}
                       className="w-full text-center text-xs text-slate-400 hover:text-white transition-colors mt-3 py-1 uppercase tracking-widest font-bold"
