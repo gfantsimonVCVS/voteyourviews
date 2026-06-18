@@ -1149,6 +1149,11 @@
                   <input
                     ref={inputRef}
                     type="text"
+                    name="vyv-address-search"
+                    autoComplete="new-password"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                     defaultValue=""
                     placeholder="123 Main St, San Marcos, TX 78666"
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-slate-900 transition-colors mb-3"
@@ -1306,7 +1311,8 @@
             if (commData?.features?.[0]?.attributes?.CommPrcnt != null) commPrecinct = String(commData.features[0].attributes.CommPrcnt);
             if (jpData?.features?.[0]?.attributes?.PRECINCT != null) jpPrecinct = String(jpData.features[0].attributes.PRECINCT);
           } catch(e) {}
-          setDistricts({ congressionalDistrict: cd ? String(cd.district_number) : null, stateSenate: senate ? String(senate.district_number) : null, stateHouse: house ? String(house.district_number) : null, commissionerPrecinct: commPrecinct, jpPrecinct: jpPrecinct });
+          // Skip the districts confirmation step — go straight to the ballot/results
+          onContinue({ congressionalDistrict: cd ? String(cd.district_number) : null, stateSenate: senate ? String(senate.district_number) : null, stateHouse: house ? String(house.district_number) : null, commissionerPrecinct: commPrecinct, jpPrecinct: jpPrecinct });
           setIsSearching(false);
         } catch(err) { setError('Could not look up your address. Please try again.'); setIsSearching(false); }
       }
@@ -1325,15 +1331,6 @@
                style={{background:'linear-gradient(160deg,#1e1b4b,#0f172a)', border:`1.5px solid ${btnColor}66`}}
                onClick={e => e.stopPropagation()}>
 
-            {/* Yield sign disclaimer banner */}
-            <div className="flex items-start gap-3 px-5 py-4" style={{background:'rgba(251,191,36,0.13)', borderBottom:'1.5px solid rgba(251,191,36,0.35)'}}>
-              <span className="text-3xl leading-none mt-0.5" role="img" aria-label="yield">⚠️</span>
-              <div>
-                <p className="text-amber-300 font-black text-base uppercase tracking-[0.18em] mb-1">Beta Version — Hays County Only</p>
-                <p className="text-amber-100/90 text-sm leading-snug font-medium">This preview includes candidates for <strong className="text-white font-bold">Hays County</strong> only. <span className="text-amber-200 font-bold italic">More counties coming soon…</span></p>
-              </div>
-            </div>
-
             <div className="relative px-6 pt-5 pb-2">
               <button onClick={onClose} className="absolute top-4 right-5 text-slate-300 hover:text-white text-2xl leading-none font-black">✕</button>
               {outOfArea ? (
@@ -1348,7 +1345,7 @@
                 <div className="flex flex-col items-center text-center pt-1">
                   <img src="icons/VoteYourViews_Logo_White.png" alt="VoteYourViews.org" className="mb-4" style={{height:'70px', width:'auto'}} />
                   <h2 className="text-white font-black text-3xl leading-tight">
-                    See who's on<br/><span style={{color: '#fcd34d'}}>your</span> ballot.
+                    See who's on<br/><span style={{color: '#fcd34d'}}>YOUR</span> ballot.
                   </h2>
                   <p className="text-slate-200 text-base mt-2 leading-snug">Enter your address — we'll show you<br/>only the candidates you can vote for.</p>
                 </div>
@@ -1368,7 +1365,7 @@
                       We'll email you the moment the guide goes live for <strong className="text-white">{outOfArea}</strong>.
                     </p>
                     <button onClick={onClose}
-                      className="w-full py-3.5 text-white font-black rounded-xl text-base transition-colors"
+                      className="w-full py-3.5 text-white font-black rounded-xl text-base transition-all hover:brightness-110 active:scale-[0.98]"
                       style={{background: btnColor}}>
                       Done
                     </button>
@@ -1392,7 +1389,7 @@
                     />
                     {signupStatus === 'invalid' && <p className="text-sm text-red-400 mb-2">Please enter a valid email address.</p>}
                     <button onClick={handleNotify} disabled={signupStatus === 'sending'}
-                      className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all disabled:opacity-50 uppercase tracking-widest"
+                      className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all disabled:opacity-50 uppercase tracking-widest hover:brightness-110 active:scale-[0.98]"
                       style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.12em'}}>
                       {signupStatus === 'sending' ? 'Adding you…' : 'Keep Me Posted →'}
                     </button>
@@ -1408,6 +1405,11 @@
                   <input
                     ref={inputRef}
                     type="text"
+                    name="vyv-address-search"
+                    autoComplete="new-password"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                     placeholder="enter your address"
                     className="w-full px-4 py-3.5 rounded-xl text-base text-white placeholder-slate-400 focus:outline-none border mb-2 transition-colors"
                     style={{background:'rgba(255,255,255,0.10)', borderColor:`${btnColor}88`}}
@@ -1415,18 +1417,21 @@
                   />
                   {error && <p className="text-sm text-red-400 mb-2">{error}</p>}
                   <button onClick={handleSearch} disabled={isSearching}
-                    className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all disabled:opacity-50 uppercase tracking-widest"
+                    className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all disabled:opacity-50 uppercase tracking-widest hover:brightness-110 active:scale-[0.98]"
                     style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.12em'}}>
                     {isSearching ? 'Looking up your address…' : 'Find My Candidates →'}
                   </button>
+                  <p className="text-xs text-slate-500 text-center mt-3 mb-3">Your address is only used to look up your districts. We don't store it.</p>
                   {onShowAll && (
-                    <button onClick={onShowAll}
-                      className="w-full text-center text-xs text-slate-400 hover:text-white transition-colors mt-3 py-1 uppercase tracking-widest font-bold"
-                      style={{letterSpacing:'0.1em'}}>
-                      Skip — Show All Candidates
-                    </button>
+                    <div className="mt-1 pt-4 border-t border-white/10 text-center">
+                      <p className="text-slate-300 text-sm font-semibold mb-2">Just exploring, or not in Hays County?</p>
+                      <button onClick={onShowAll}
+                        className="w-full py-3.5 rounded-xl text-sm font-black uppercase tracking-widest transition-all active:scale-[0.98] hover:bg-white/10"
+                        style={{background:'rgba(255,255,255,0.06)', border:'1.5px solid #fcd34d', color:'#fff', letterSpacing:'0.1em'}}>
+                        Keep Exploring →
+                      </button>
+                    </div>
                   )}
-                  <p className="text-[10px] text-slate-500 text-center mt-3">Your address is only used to look up your districts. We don't store it.</p>
                 </>
               ) : (
                 <>
@@ -1448,6 +1453,15 @@
                   </button>
                 </>
               )}
+            </div>
+
+            {/* Beta disclaimer — footer */}
+            <div className="flex items-start gap-3 px-5 py-3.5" style={{background:'rgba(251,191,36,0.13)', borderTop:'1.5px solid rgba(251,191,36,0.35)'}}>
+              <span className="text-2xl leading-none mt-0.5" role="img" aria-label="yield">⚠️</span>
+              <div>
+                <p className="text-amber-300 font-black text-sm uppercase tracking-[0.18em] mb-0.5">Beta Version</p>
+                <p className="text-amber-100/90 text-sm leading-snug font-medium">This preview includes candidates for <strong className="text-white font-bold">HAYS COUNTY</strong> only. <span className="text-amber-200 font-bold italic">More counties coming soon…</span></p>
+              </div>
             </div>
           </div>
         </div>
@@ -2152,10 +2166,11 @@
     }
 
     // ─── SUMMARY ───
-    function Summary({ issues, answers, ranks, onMatchAll, onMatchMine, onViewConstellation, onAnswerMore, onHome, onStartOver, onBallot, county }) {
+    function Summary({ issues, answers, ranks, onMatchAll, onMatchMine, onCompareMine, onViewConstellation, onAnswerMore, onHome, onStartOver, onBallot, county }) {
       const [showChallenge, setShowChallenge] = React.useState(false);
       const [showAddressModal, setShowAddressModal] = React.useState(false);
       const [ballotMode, setBallotMode] = React.useState(false);
+      const [compareMode, setCompareMode] = React.useState(false);
       const [copied, setCopied] = React.useState(false);
       const [showDrop, setShowDrop] = React.useState(false);
 
@@ -2324,7 +2339,7 @@
                           style={{letterSpacing:'0.1em'}}>
                           Build My Ballot
                         </button>
-                        <button onClick={() => { setShowDrop(false); onMatchAll(); }}
+                        <button onClick={() => { setShowDrop(false); setCompareMode(true); setShowAddressModal(true); }}
                           className="w-full px-5 py-3 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-colors border-b border-white/10"
                           style={{letterSpacing:'0.1em'}}>
                           Compare Candidates
@@ -2358,9 +2373,9 @@
                 county={county || 'hays'}
                 accentColor={dominantColorMid}
                 accentColorDark={dominantColorDark}
-                onClose={() => setShowAddressModal(false)}
-                onContinue={(districts) => { setShowAddressModal(false); setBallotMode(false); if (ballotMode) { onBallot(districts); } else { onMatchMine(districts); } }}
-                onShowAll={ballotMode ? undefined : () => { setShowAddressModal(false); onMatchAll(); }}
+                onClose={() => { setShowAddressModal(false); setBallotMode(false); setCompareMode(false); }}
+                onContinue={(districts) => { setShowAddressModal(false); const wasCompare = compareMode, wasBallot = ballotMode; setBallotMode(false); setCompareMode(false); if (wasCompare) { onCompareMine(districts); } else if (wasBallot) { onBallot(districts); } else { onMatchMine(districts); } }}
+                onShowAll={ballotMode ? undefined : () => { setShowAddressModal(false); setCompareMode(false); onMatchAll(); }}
               />
             )}
 
@@ -2697,7 +2712,7 @@
 
           {/* 3-item action row: Address | Compare Opponents | My Ballot — frosted glass set */}
           <div className="max-w-5xl mx-auto w-full px-4 pt-3 flex flex-col sm:flex-row items-stretch gap-3">
-            {/* Address filter */}
+            {/* Dynamic county header (green "your candidates" once an address is entered) */}
             <div className="flex-1">
               {userDistricts ? (
                 <div className="h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200"
@@ -2710,16 +2725,11 @@
                   <button onClick={() => setUserDistricts(null)} className="ml-auto text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0" style={{background:'rgba(255,255,255,0.18)', color:'#fff'}}>✕ Clear</button>
                 </div>
               ) : (
-                <button onClick={() => setShowFilterModal(true)}
-                  className="w-full h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-                  style={{background:'linear-gradient(135deg, rgba(37,99,235,0.28), rgba(30,58,138,0.16))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(147,197,253,0.32)', boxShadow:'0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)', color:'#fff'}}>
+                <div className="h-full flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{background:'linear-gradient(135deg, rgba(37,99,235,0.22), rgba(30,58,138,0.12))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(147,197,253,0.28)', boxShadow:'0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)', color:'#fff'}}>
                   <svg className="w-5 h-5 shrink-0" style={{color:'#60a5fa'}} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
-                  <div className="text-left min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{color:'rgba(255,255,255,0.7)'}}>Filter by your address</div>
-                    <div className="text-sm font-black uppercase tracking-wide">Show My Candidates Only</div>
-                  </div>
-                  <svg className="w-4 h-4 shrink-0 ml-auto" style={{color:'rgba(255,255,255,0.7)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </button>
+                  <div className="text-sm font-black uppercase tracking-wide truncate">{counties[county].name} Candidates</div>
+                </div>
               )}
             </div>
             {/* Compare Opponents — frosted red glass */}
@@ -4078,9 +4088,9 @@
             </div>
           </header>
 
-          {/* Address filter + Build My Ballot — frosted glass row */}
+          {/* County indicator + Build My Ballot — frosted glass row */}
           <div className="max-w-5xl mx-auto px-4 pt-3 flex flex-col sm:flex-row items-stretch gap-3">
-            {/* Left — address filter */}
+            {/* Left — dynamic county header (green "your candidates" once an address is entered) */}
             <div className="flex-1">
               {userDistricts ? (
                 <div className="h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200"
@@ -4097,18 +4107,11 @@
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setShowFilterModal(true)}
-                  className="w-full h-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-                  style={{background:'linear-gradient(135deg, rgba(37,99,235,0.28), rgba(30,58,138,0.16))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(147,197,253,0.32)', boxShadow:'0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)', color:'#fff'}}>
+                <div className="h-full flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{background:'linear-gradient(135deg, rgba(37,99,235,0.22), rgba(30,58,138,0.12))', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', border:'1px solid rgba(147,197,253,0.28)', boxShadow:'0 8px 22px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)', color:'#fff'}}>
                   <svg className="w-5 h-5 shrink-0" style={{color:'#60a5fa'}} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
-                  <div className="text-left min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{color:'rgba(255,255,255,0.7)'}}>Filter by your address</div>
-                    <div className="text-sm font-black uppercase tracking-wide">Show My Candidates Only</div>
-                  </div>
-                  <svg className="w-4 h-4 shrink-0 ml-auto" style={{color:'rgba(255,255,255,0.7)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </button>
+                  <div className="text-sm font-black uppercase tracking-wide truncate">{counties[county].name} Candidates</div>
+                </div>
               )}
             </div>
             {/* Right — Build My Ballot (frosted glass; green when races selected, blue lead otherwise) */}
@@ -4903,6 +4906,7 @@
       const [initialRace, setInitialRace] = useState(null);     // passed to Browse to auto-open a race
       const [browseReturn, setBrowseReturn] = useState('landing'); // screen to return to from Compare/Browse
       const [resultsReturn, setResultsReturn] = useState('landing'); // screen to return to from Pre-Ballot (results)
+      const [addrModal, setAddrModal] = useState(null); // destination screen after address modal: 'browse' | 'results' | null
 
       async function loadFromSheets() {
         setScreen('loading');
@@ -4972,6 +4976,7 @@
 
       if (screen === 'landing') {
         return (
+          <>
           <Landing
             county={county}
             setCounty={setCounty}
@@ -4980,10 +4985,21 @@
             issues={issues}
             answers={answers}
             onQuiz={(id) => { setStartIssueId(id || null); setPendingScreen('landing'); setScreen('quiz'); }}
-            onSummary={() => { setResultsReturn('landing'); setScreen('results'); }}
+            onSummary={() => { setResultsReturn('landing'); setAddrModal('results'); }}
             onStartOver={() => { setAnswers({}); setRanks({}); setCheckedStatements({}); setSelected({}); setStartIssueId(null); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); store.removeItem('vyv_stmts'); }}
-            onBrowse={() => { setBrowseReturn('landing'); setScreen('browse'); }}
+            onBrowse={() => { setBrowseReturn('landing'); setAddrModal('browse'); }}
           />
+          {addrModal && (
+            <AddressModal
+              county={county}
+              accentColor="#3b82f6"
+              accentColorDark="#1d4ed8"
+              onClose={() => setAddrModal(null)}
+              onContinue={(districts) => { const dest = addrModal; setUserDistricts(districts); setAddrModal(null); setScreen(dest); }}
+              onShowAll={() => { const dest = addrModal; setAddrModal(null); setScreen(dest); }}
+            />
+          )}
+          </>
         );
       }
 
@@ -5082,6 +5098,7 @@
             ranks={ranks}
             county={county}
             onMatchAll={() => { setBrowseReturn('summary'); setScreen('browse'); }}
+            onCompareMine={(districts) => { setUserDistricts(districts); setBrowseReturn('summary'); setScreen('browse'); }}
             onBallot={(districts) => { if (districts) setUserDistricts(districts); setScreen('ballot'); }}
             onMatchMine={(districts) => { setUserDistricts(districts); setResultsReturn('summary'); setScreen('results'); }}
             onViewConstellation={() => setScreen('constellation')}
