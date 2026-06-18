@@ -1029,20 +1029,26 @@
 
       // Load Google Places Autocomplete
       useEffect(() => {
-        const GOOGLE_API_KEY = 'AIzaSyCn_2AoVDh-FUniDp3LAVILut4mr2P8O0o';
+        const GOOGLE_API_KEY = 'AIzaSyCwBv8O4lWqSoZZxH4npofqAeU2C86ejkI';
+        // If Google rejects the key/domain or an API isn't enabled, it calls this.
+        // We swallow it so the screen never freezes — manual entry + the button
+        // still work via Geocodio.
+        window.gm_authFailure = () => {};
         function initAutocomplete() {
-          if (!inputRef.current || !window.google) return;
-          const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-            types: ['address'],
-            componentRestrictions: { country: 'us' },
-            fields: ['formatted_address']
-          });
-          ac.addListener('place_changed', () => {
-            const place = ac.getPlace();
-            if (place.formatted_address && inputRef.current) {
-              inputRef.current.value = place.formatted_address;
-            }
-          });
+          try {
+            if (!inputRef.current || !window.google?.maps?.places?.Autocomplete) return;
+            const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+              types: ['address'],
+              componentRestrictions: { country: 'us' },
+              fields: ['formatted_address']
+            });
+            ac.addListener('place_changed', () => {
+              const place = ac.getPlace();
+              if (place.formatted_address && inputRef.current) {
+                inputRef.current.value = place.formatted_address;
+              }
+            });
+          } catch (e) { /* autocomplete unavailable — manual entry still works */ }
         }
         if (!window.google) {
           const script = document.createElement('script');
@@ -1050,6 +1056,7 @@
           script.async = true;
           script.defer = true;
           script.onload = initAutocomplete;
+          script.onerror = () => {};
           document.head.appendChild(script);
         } else {
           initAutocomplete();
@@ -1206,26 +1213,33 @@
       const inputRef = useRef(null);
 
       useEffect(() => {
-        const GOOGLE_API_KEY = 'AIzaSyCn_2AoVDh-FUniDp3LAVILut4mr2P8O0o';
+        const GOOGLE_API_KEY = 'AIzaSyCwBv8O4lWqSoZZxH4npofqAeU2C86ejkI';
+        // If Google rejects the key/domain or an API isn't enabled, it calls this.
+        // We swallow it so the modal never freezes — manual entry + the button
+        // still work via Geocodio.
+        window.gm_authFailure = () => {};
         function initAutocomplete() {
-          if (!inputRef.current || !window.google) return;
-          const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-            types: ['address'],
-            componentRestrictions: { country: 'us' },
-            fields: ['formatted_address']
-          });
-          ac.addListener('place_changed', () => {
-            const place = ac.getPlace();
-            if (place.formatted_address && inputRef.current) {
-              inputRef.current.value = place.formatted_address;
-            }
-          });
+          try {
+            if (!inputRef.current || !window.google?.maps?.places?.Autocomplete) return;
+            const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+              types: ['address'],
+              componentRestrictions: { country: 'us' },
+              fields: ['formatted_address']
+            });
+            ac.addListener('place_changed', () => {
+              const place = ac.getPlace();
+              if (place.formatted_address && inputRef.current) {
+                inputRef.current.value = place.formatted_address;
+              }
+            });
+          } catch (e) { /* autocomplete unavailable — manual entry still works */ }
         }
         if (!window.google) {
           const script = document.createElement('script');
           script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places`;
           script.async = true; script.defer = true;
           script.onload = initAutocomplete;
+          script.onerror = () => {};
           document.head.appendChild(script);
         } else { initAutocomplete(); }
       }, []);
