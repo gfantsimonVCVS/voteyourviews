@@ -271,6 +271,11 @@
     // Temporary Hook 1 / Hook 2 copy until the sheet gets `hook1` and `hook2` columns
     const PHOTO_FALLBACK = {
       'James Talarico': 'https://lh3.googleusercontent.com/d/1xT_tzvyzpedvvRDZJ3V09TqjcoTiPiDO',
+      // Hays Dems whose Sheet photo cell is empty — Drive file IDs, same lh3 format as the rest
+      'Elaine H. Cárdenas': 'https://lh3.googleusercontent.com/d/1FWhHrcA0OrlOZ-j49m7PW7_4DzV5ve5G',
+      'Maggie Hernandez-Moreno': 'https://lh3.googleusercontent.com/d/1K6T4raB32Hv4zismhpBZAZe0768DNu1L',
+      'Beth Smith': 'https://lh3.googleusercontent.com/d/1--CHI_DGGt73n7nD-Zq5GkbMpZIOk0NH',
+      'Sandra Bryant': 'https://lh3.googleusercontent.com/d/1ckAyPB35hCDpTT5NFpCZbUfCK4Mmz_y4',
     };
     const HOOK1_FALLBACK = {
       'James Talarico': 'A former middle-school teacher who gave up a safe seat to bet his career on the hardest race in Texas.',
@@ -879,9 +884,11 @@
           const disagrees = total - agrees;
           const voice = ISSUE_VOICE[id] || 'LEFT';
 
-          // agreeRate for the A candidate, disagreeRate for the C candidate
-          const aRate = voice === 'LEFT' ? agrees / 4 : disagrees / 4;
-          const cRate = voice === 'RIGHT' ? agrees / 4 : disagrees / 4;
+          // agreeRate for the A candidate, disagreeRate for the C candidate.
+          // Divide by the statements actually voted on (total) — "No Opinion" statements
+          // aren't in `reactions`, so they're excluded from the match (not counted against).
+          const aRate = voice === 'LEFT' ? agrees / total : disagrees / total;
+          const cRate = voice === 'RIGHT' ? agrees / total : disagrees / total;
           const voterRate = candPos === 'A' ? aRate : candPos === 'C' ? cRate : 0;
 
           weightedScore += voterRate * importance;
@@ -1866,18 +1873,18 @@
                               color: isDone ? '#fff' : wasSkipped ? 'rgba(255,255,255,0.5)' : isOpen ? '#f59e0b' : 'rgba(255,255,255,0.4)',
                               border: isOpen && !isDone ? '1.5px solid #f59e0b' : 'none',
                             }}>
-                            {r === 'up' ? '✓' : r === 'down' ? '✕' : wasSkipped ? '⏭' : i + 1}
+                            {r === 'up' ? '✓' : r === 'down' ? '✕' : wasSkipped ? '–' : i + 1}
                           </div>
                           <p className="text-xs lg:text-sm font-bold uppercase tracking-widest"
                             style={{color: isOpen ? 'rgba(255,255,255,0.5)' : isDone ? 'rgba(255,255,255,0.35)' : wasSkipped ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.25)'}}>
-                            {isOpen ? `Statement ${i + 1}` : isDone ? (r === 'up' ? 'Agreed' : 'Disagreed') : wasSkipped ? 'Skipped' : `Statement ${i + 1}`}
+                            {isOpen ? `Statement ${i + 1}` : isDone ? (r === 'up' ? 'Agreed' : 'Disagreed') : wasSkipped ? 'No Opinion' : `Statement ${i + 1}`}
                           </p>
-                          {/* Mobile: per-statement Skip — top-right of the open card */}
+                          {/* Mobile: per-statement No Opinion — top-right of the open card */}
                           {isOpen && (
                             <button onClick={(e) => { e.stopPropagation(); skipCard(); }}
                               className="ml-auto lg:hidden flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all active:scale-95"
-                              style={{color: skippedSet[cardIndex] ? '#fff' : 'rgba(255,255,255,0.55)', border: skippedSet[cardIndex] ? '1px solid rgba(255,255,255,0.9)' : '1px solid rgba(255,255,255,0.2)', letterSpacing:'0.08em'}}>
-                              ⏭ Skip
+                              style={{color: skippedSet[cardIndex] ? '#fff' : 'rgba(255,255,255,0.55)', border: skippedSet[cardIndex] ? '1px solid rgba(255,255,255,0.9)' : '1px solid rgba(255,255,255,0.2)', letterSpacing:'0.06em'}}>
+                              No Opinion
                             </button>
                           )}
                         </div>
@@ -1930,8 +1937,8 @@
                               </button>
                               <button onClick={skipCard}
                                 className="mt-1 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 px-4 py-1.5 rounded-full hover:border-white hover:text-white"
-                                style={{color: skippedSet[cardIndex] ? '#fff' : 'rgba(255,255,255,0.5)', border: skippedSet[cardIndex] ? '1px solid rgba(255,255,255,0.9)' : '1px solid rgba(255,255,255,0.2)', boxShadow: skippedSet[cardIndex] ? '0 0 0 1px rgba(255,255,255,0.4)' : 'none'}}>
-                                ⏭ Skip
+                                style={{color: skippedSet[cardIndex] ? '#fff' : 'rgba(255,255,255,0.5)', border: skippedSet[cardIndex] ? '1px solid rgba(255,255,255,0.9)' : '1px solid rgba(255,255,255,0.2)', boxShadow: skippedSet[cardIndex] ? '0 0 0 1px rgba(255,255,255,0.4)' : 'none', letterSpacing:'0.08em'}}>
+                                No Opinion
                               </button>
                             </div>
                           </div>
@@ -1950,11 +1957,11 @@
                   </button>
                 )}
 
-                {/* Skip issue */}
+                {/* Skip entire issue */}
                 <button onClick={handleSkip}
                   className="mt-2 mb-4 w-full lg:w-96 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:border-white hover:text-white active:scale-95 lg:self-center"
                   style={{color:'rgba(255,255,255,0.5)', border:'1px solid rgba(255,255,255,0.2)', letterSpacing:'0.1em'}}>
-                  This issue doesn't affect my vote
+                  Skip This Issue
                 </button>
               </>
             ) : (
@@ -2525,7 +2532,7 @@
 
 
 
-    function Results({ county, counties, issues, answers, ranks, checkedStatements, selected, setSelected, userDistricts, setUserDistricts, onBallot, onRetake, onBrowse, onCompare, onAddress }) {
+    function Results({ county, counties, issues, answers, ranks, checkedStatements, selected, setSelected, userDistricts, setUserDistricts, onBallot, onBack, onBrowse, onCompare, onAddress }) {
       const countyData = counties[county];
       const [profileData, setProfileData] = React.useState(null); // { candidate, race }
       const [compareRace, setCompareRace] = React.useState(null); // race object for RaceDetail overlay
@@ -2550,7 +2557,7 @@
             {/* Mobile */}
             <div className="lg:hidden px-4 py-3.5">
               <div className="flex items-center justify-center relative">
-                <button onClick={onRetake} className="absolute left-0 text-sm font-medium flex items-center gap-1" style={{color:'#94a3b8'}}>← Back</button>
+                <button onClick={onBack} className="absolute left-0 text-sm font-medium flex items-center gap-1" style={{color:'#94a3b8'}}>← Back</button>
                 <div className="text-xs font-black uppercase tracking-widest" style={{color:'#64748b', letterSpacing:'0.15em'}}>{counties[county].name} <span style={{color:'#d97706'}}>Beta V1</span></div>
               </div>
               <div className="mt-3 flex gap-1 p-1 rounded-xl" style={{background:'#0f172a'}}>
@@ -2568,7 +2575,7 @@
             </div>
             {/* Desktop */}
             <div className="hidden lg:flex items-center h-16 px-8 relative">
-              <button onClick={onRetake} className="absolute left-8 text-sm font-semibold flex items-center gap-1.5 transition-colors" style={{color:'#94a3b8'}}>← Back</button>
+              <button onClick={onBack} className="absolute left-8 text-sm font-semibold flex items-center gap-1.5 transition-colors" style={{color:'#94a3b8'}}>← Back</button>
               <div className="flex gap-2 mx-auto">
                 {TABS.map(tab => {
                   const isActive = tab.key === activeTab;
@@ -4792,6 +4799,7 @@
       const [returnToRace, setReturnToRace] = useState(null);   // { office } → go back to RaceDetail after quiz
       const [initialRace, setInitialRace] = useState(null);     // passed to Browse to auto-open a race
       const [browseReturn, setBrowseReturn] = useState('landing'); // screen to return to from Compare/Browse
+      const [resultsReturn, setResultsReturn] = useState('landing'); // screen to return to from Pre-Ballot (results)
 
       async function loadFromSheets() {
         setScreen('loading');
@@ -4869,7 +4877,7 @@
             issues={issues}
             answers={answers}
             onQuiz={(id) => { setStartIssueId(id || null); setPendingScreen('landing'); setScreen('quiz'); }}
-            onSummary={() => setScreen('results')}
+            onSummary={() => { setResultsReturn('landing'); setScreen('results'); }}
             onStartOver={() => { setAnswers({}); setRanks({}); setCheckedStatements({}); setSelected({}); setStartIssueId(null); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); store.removeItem('vyv_stmts'); }}
             onBrowse={() => { setBrowseReturn('landing'); setScreen('browse'); }}
           />
@@ -4958,7 +4966,7 @@
             onHome={() => { setStartIssueId(null); setScreen('landing'); }}
             onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
             answers={answers}
-            onSummary={() => { setStartIssueId(null); setScreen('results'); }}
+            onSummary={() => { setStartIssueId(null); setResultsReturn('landing'); setScreen('results'); }}
           />
         );
       }
@@ -4972,7 +4980,7 @@
             county={county}
             onMatchAll={() => { setBrowseReturn('summary'); setScreen('browse'); }}
             onBallot={(districts) => { if (districts) setUserDistricts(districts); setScreen('ballot'); }}
-            onMatchMine={(districts) => { setUserDistricts(districts); setScreen('results'); }}
+            onMatchMine={(districts) => { setUserDistricts(districts); setResultsReturn('summary'); setScreen('results'); }}
             onViewConstellation={() => setScreen('constellation')}
             onAnswerMore={(id) => { setStartIssueId(id); setPendingScreen('summary'); setScreen('quiz'); }}
             onHome={() => { setStartIssueId(null); setScreen('landing'); }}
@@ -5007,7 +5015,7 @@
             userDistricts={userDistricts}
             setUserDistricts={setUserDistricts}
             onBallot={() => setScreen('ballot')}
-            onRetake={() => { setAnswers({}); setRanks({}); setCheckedStatements({}); setSelected({}); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); store.removeItem('vyv_stmts'); setScreen('landing'); }}
+            onBack={() => setScreen(resultsReturn)}
             onBrowse={() => { setBrowseReturn('results'); setScreen('browse'); }}
             onCompare={(race) => { setBrowseReturn('results'); setInitialRace(race.office); setScreen('browse'); }}
             onAddress={() => setScreen('address')}
