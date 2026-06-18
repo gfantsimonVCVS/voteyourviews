@@ -177,6 +177,11 @@
       wrap: "w-72 mx-auto",
     };
 
+    // Mailing-list endpoint (Google Apps Script web app URL). When a voter enters
+    // an address outside the supported counties, their email is POSTed here and
+    // appended to the waitlist Google Sheet. Leave '' until the script is deployed.
+    const MAILING_LIST_URL = 'https://script.google.com/macros/s/AKfycbyP6JoSyUuXLLPaddkVMeNBbj8YA62btGE9UNVLcnLj_tB2j1cLMS2BSBbdUhkIWQqC/exec';
+
     const SHEETS = {
       master: '1V1oaEy6ToV3LZt0et9bIWEJQbPrYZg73tDxGelhiFn8',
       counties: {
@@ -1210,7 +1215,33 @@
       const [isSearching, setIsSearching] = useState(false);
       const [error, setError] = useState(null);
       const [districts, setDistricts] = useState(null);
+      const [outOfArea, setOutOfArea] = useState(null);   // county name when unsupported
+      const [signupEmail, setSignupEmail] = useState('');
+      const [signupStatus, setSignupStatus] = useState(null); // null|invalid|sending|done
       const inputRef = useRef(null);
+
+      async function handleNotify() {
+        const email = signupEmail.trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setSignupStatus('invalid'); return; }
+        setSignupStatus('sending');
+        try {
+          if (MAILING_LIST_URL) {
+            await fetch(MAILING_LIST_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                email,
+                county: outOfArea || '',
+                address: (inputRef.current && inputRef.current.value) || '',
+                source: 'voteyourviews-beta',
+                ts: new Date().toISOString()
+              })
+            });
+          }
+        } catch (e) { /* no-cors hides the response; treat as sent */ }
+        setSignupStatus('done');
+      }
 
       useEffect(() => {
         const GOOGLE_API_KEY = 'AIzaSyCwBv8O4lWqSoZZxH4npofqAeU2C86ejkI';
@@ -1257,7 +1288,7 @@
           if (!result) { setError('Address not found. Try the full address with city and state.'); setIsSearching(false); return; }
           const components = result.address_components || {};
           if (county === 'hays' && components.county && !components.county.toLowerCase().includes('hays')) {
-            setError(`This guide covers Hays County. Your address appears to be in ${components.county}.`);
+            setOutOfArea(components.county || 'your area');
             setIsSearching(false); return;
           }
           const fields = result.fields || {};
@@ -1295,24 +1326,81 @@
                onClick={e => e.stopPropagation()}>
 
             {/* Yield sign disclaimer banner */}
-            <div className="flex items-start gap-3 px-4 py-3" style={{background:'rgba(251,191,36,0.13)', borderBottom:'1.5px solid rgba(251,191,36,0.35)'}}>
-              <span className="text-2xl leading-none mt-0.5" role="img" aria-label="yield">⚠️</span>
+            <div className="flex items-start gap-3 px-5 py-4" style={{background:'rgba(251,191,36,0.13)', borderBottom:'1.5px solid rgba(251,191,36,0.35)'}}>
+              <span className="text-3xl leading-none mt-0.5" role="img" aria-label="yield">⚠️</span>
               <div>
-                <p className="text-amber-300 font-black text-xs uppercase tracking-widest mb-0.5">Beta Version — Hays County Only</p>
-                <p className="text-amber-100 text-xs leading-relaxed">This preview includes candidates for <strong className="text-white">Hays County</strong> only.<br/>More counties coming soon...</p>
+                <p className="text-amber-300 font-black text-base uppercase tracking-[0.18em] mb-1">Beta Version — Hays County Only</p>
+                <p className="text-amber-100/90 text-sm leading-snug font-medium">This preview includes candidates for <strong className="text-white font-bold">Hays County</strong> only. <span className="text-amber-200 font-bold italic">More counties coming soon…</span></p>
               </div>
             </div>
 
-            <div className="px-6 pt-5 pb-2 flex items-start justify-between">
-              <div>
-                <h2 className="text-white font-black text-2xl">Find My Candidates</h2>
-                <p className="text-slate-200 text-sm mt-1">Enter your address to see only the<br/>candidates on your ballot.</p>
-              </div>
-              <button onClick={onClose} className="text-slate-300 hover:text-white text-xl leading-none ml-4 mt-0.5 font-black">✕</button>
+            <div className="relative px-6 pt-5 pb-2">
+              <button onClick={onClose} className="absolute top-4 right-5 text-slate-300 hover:text-white text-2xl leading-none font-black">✕</button>
+              {outOfArea ? (
+                <div className="flex flex-col items-center text-center pt-1">
+                  <img src="icons/VoteYourViews_Logo_White.png" alt="VoteYourViews.org" className="mb-4" style={{height:'70px', width:'auto'}} />
+                  <h2 className="text-white font-black text-3xl leading-tight">
+                    Not available in<br/>
+                    <span style={{color: '#fcd34d'}}>{outOfArea}</span>…&nbsp;<span style={{color: '#ef4444'}}>YET!!!</span>
+                  </h2>
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-white font-black text-2xl">Find My Candidates</h2>
+                  <p className="text-slate-200 text-sm mt-1">Enter your address to see only the<br/>candidates on your ballot.</p>
+                </div>
+              )}
             </div>
 
             <div className="px-6 py-4">
-              {!districts ? (
+              {outOfArea ? (
+                signupStatus === 'done' ? (
+                  <div className="text-center py-2">
+                    <div className="mx-auto mb-4 flex items-center justify-center w-16 h-16 rounded-full"
+                         style={{background:`${btnColor}26`, border:`1.5px solid ${btnColor}`}}>
+                      <span className="text-4xl" role="img" aria-label="check">✅</span>
+                    </div>
+                    <h3 className="text-white font-black text-2xl mb-2">You're on the list!</h3>
+                    <p className="text-slate-200 text-base leading-relaxed mb-5">
+                      We'll email you the moment the guide goes live for <strong className="text-white">{outOfArea}</strong>.
+                    </p>
+                    <button onClick={onClose}
+                      className="w-full py-3.5 text-white font-black rounded-xl text-base transition-colors"
+                      style={{background: btnColor}}>
+                      Done
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-xl px-4 py-4 mb-4"
+                         style={{background:'rgba(255,255,255,0.05)', border:`1px solid ${btnColor}55`}}>
+                      <p className="text-slate-200 text-base leading-relaxed">
+                        If you want to know when <strong className="text-white">{outOfArea}</strong> is available… 👇
+                      </p>
+                    </div>
+                    <input
+                      type="email"
+                      value={signupEmail}
+                      onChange={e => { setSignupEmail(e.target.value); if (signupStatus === 'invalid') setSignupStatus(null); }}
+                      placeholder="enter your email address"
+                      className="w-full px-4 py-3.5 rounded-xl text-base text-white placeholder-slate-400 focus:outline-none border mb-2 transition-colors"
+                      style={{background:'rgba(255,255,255,0.10)', borderColor: signupStatus === 'invalid' ? '#f87171' : `${btnColor}88`}}
+                      onKeyDown={e => e.key === 'Enter' && handleNotify()}
+                    />
+                    {signupStatus === 'invalid' && <p className="text-sm text-red-400 mb-2">Please enter a valid email address.</p>}
+                    <button onClick={handleNotify} disabled={signupStatus === 'sending'}
+                      className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all disabled:opacity-50 uppercase tracking-widest"
+                      style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.12em'}}>
+                      {signupStatus === 'sending' ? 'Adding you…' : 'Keep Me Posted →'}
+                    </button>
+                    <button onClick={() => { setOutOfArea(null); setSignupStatus(null); setSignupEmail(''); if (inputRef.current) inputRef.current.value=''; }}
+                      className="w-full py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+                      ← Try a different address
+                    </button>
+                    <p className="text-xs text-slate-500 text-center mt-3">We'll only email you about this guide. No spam, ever.</p>
+                  </>
+                )
+              ) : !districts ? (
                 <>
                   <input
                     ref={inputRef}
