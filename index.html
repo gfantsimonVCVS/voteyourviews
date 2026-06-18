@@ -4914,7 +4914,7 @@
         try {
           const [issueRows, statewideRows, stmtRows] = await Promise.all([
             fetchSheet(SHEETS.master, 'issues'),
-            fetchSheet(SHEETS.master, 'statewide'),
+            fetchSheet(SHEETS.master, 'HaysCounty'),
             fetchSheet(SHEETS.master, 'Statements').catch(() => []),
           ]);
           if (stmtRows.length > 0) {
