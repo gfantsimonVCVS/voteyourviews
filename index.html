@@ -1361,12 +1361,21 @@
                       <span className="text-4xl" role="img" aria-label="check">✅</span>
                     </div>
                     <h3 className="text-white font-black text-2xl mb-2">You're on the list!</h3>
-                    <p className="text-slate-200 text-base leading-relaxed mb-5">
+                    <p className="text-slate-200 text-base leading-relaxed mb-4">
                       We'll email you the moment the guide goes live for <strong className="text-white">{outOfArea}</strong>.
                     </p>
+                    <p className="text-slate-300 text-sm leading-relaxed mb-5">
+                      In the meantime, explore how it works with our <strong className="text-white">Hays County</strong> candidates. 👇
+                    </p>
+                    {onShowAll ? (
+                      <button onClick={onShowAll}
+                        className="w-full py-3.5 text-white font-black rounded-xl text-base mb-2 transition-all hover:brightness-110 active:scale-[0.98]"
+                        style={{background:`linear-gradient(90deg,${btnColorDark},${btnColor})`, letterSpacing:'0.06em'}}>
+                        Keep Exploring →
+                      </button>
+                    ) : null}
                     <button onClick={onClose}
-                      className="w-full py-3.5 text-white font-black rounded-xl text-base transition-all hover:brightness-110 active:scale-[0.98]"
-                      style={{background: btnColor}}>
+                      className="w-full py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
                       Done
                     </button>
                   </div>
@@ -4545,7 +4554,7 @@
             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(148,163,184);
             pdf.text('Scan to look up', qx - 6, qy + 27, { align: 'right' });
           }
-          y += 30;
+          y += 54;  // clear the QR code (54pt tall) so the location boxes don't overlap it
           // Location boxes — 2-column grid
           const boxGap = 12, boxW = (contentW - boxGap) / 2, boxH = 40;
           pollLocs.forEach((loc, i) => {
@@ -5025,6 +5034,7 @@
       if (screen === 'quiz') {
         const issue = issues.find(i => i.id === startIssueId) || issues[0];
         return (
+          <>
           <Quiz
             key={startIssueId}
             issue={issue}
@@ -5085,8 +5095,19 @@
             onHome={() => { setStartIssueId(null); setScreen('landing'); }}
             onStartOver={() => { setAnswers({}); setRanks({}); setSelected({}); setStartIssueId(null); setScreen('landing'); store.removeItem('vyv_answers'); store.removeItem('vyv_ranks'); }}
             answers={answers}
-            onSummary={() => { setStartIssueId(null); setResultsReturn('landing'); setScreen('results'); }}
+            onSummary={() => { setStartIssueId(null); setResultsReturn('landing'); setAddrModal('results'); }}
           />
+          {addrModal && (
+            <AddressModal
+              county={county}
+              accentColor="#3b82f6"
+              accentColorDark="#1d4ed8"
+              onClose={() => setAddrModal(null)}
+              onContinue={(districts) => { const dest = addrModal; setUserDistricts(districts); setAddrModal(null); setScreen(dest); }}
+              onShowAll={() => { const dest = addrModal; setAddrModal(null); setScreen(dest); }}
+            />
+          )}
+          </>
         );
       }
 
